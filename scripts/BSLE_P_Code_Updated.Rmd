@@ -1,0 +1,1761 @@
+---
+title: "BSLE_P_Code"
+author: "Morgan Barnes"
+date: "'2023-08-18'r Sys.Date()'"
+output: html_document
+---
+
+##Make your environemnt
+
+#### Set Up
+```{r setup, include=FALSE, dev="CairoPNG"}
+rm(list=ls(all=T))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Load libraries
+```{r library}
+
+require(pacman)
+
+pacman::p_load(tidyverse,
+              dplyr,plyr,ggplot2,
+              lubridate, tidyr, tidyverse,
+              scales, cowplot, gridExtra, RColorBrewer,
+              wesanderson,readxl,openxlsx, stringr, hablar,
+              janitor, stringr, naniar, forstringr, reshape2, 
+              emmeans, rstatix, ggpubr, Hmisc, corrplot, ggrepel, 
+              stringr, lme4, lmerTest, car)
+
+
+```
+
+##### Confirm working directory:
+```{r working directory check, echo=FALSE}
+getwd()
+```
+
+##Load data
+The datasets and metadata needed for P BSLE Gradient manuscript are:
+1) Chemistry datasets solids and liquids w/ all metadata that can be used directly from data package:
+This includes: 
+a) Total elemental composition of solids
+b) Total elemental composition of leachate particulate and filtered fractions
+c) Molybdate reactive P of leachate filtered fraction
+d) XANES of solids
+e) NMR of solids
+
+2) Chemistry data that needs post-data package processing:
+a) XANES of sollids
+b) ENMR of solids
+
+
+#### Download the BSLE Data Package
+
+Until we can get the API to work, do this manually and store on your local. I recommend storing inside your github folder and gitignoring the subfolder with the data in it by adding this to your .gitignore: 
+`#data folder` 
+`data/`
+
+BSLE data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
+
+Bring in the data package data:
+```{r bsle v3 data package}
+#metadata
+Meta <- read_csv("../data/BSLE_Data_Package_v3/v1_BSLE_Metadata_and_Protocols/BSLE_Burn_and_Laboratory_Metadata.csv") %>%
+  dplyr::rename(Sample_ID = Sample_Name,
+                Leachate_vol_mL = Leachate_Volume,
+                Char_leached_g = Char_Leached) %>%
+  naniar::replace_with_na_all(condition = ~.x ==-9999) %>%
+  naniar::replace_with_na_all(condition = ~.x == "N/A") %>%
+  mutate(Burn_Severity=replace(Burn_Severity, Burn_Severity=='unburned', 'Unburned'))
+
+Meta<-Meta[ c(2,3,5,8,21,25,26)]
+Meta$Burn_Severity=factor(Meta$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+#chemical data from data package
+ICP_Solid <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP_Solid.csv")
+ICP_Leachate <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP.csv")
+MBD <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_MBD.csv")
+ICP_PNMR <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP_PNMR.csv")
+npoctdn <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/v2_BSLE_NPOC_TN.csv")
+SolidCN <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_CN.csv")
+
+#chemical data processed with additional steps after data package
+NMR <- read.csv("../data/NMR_Solid_Leachate_All_Use.csv")
+
+```
+
+
+Clean up data functions:
+```{r functions for cleaning}
+essdive_template_cleaning <- function(dataframe){
+  cleaned <- dataframe %>% 
+  janitor::row_to_names(row_number = which(dataframe[,1] == "Field_Name")) %>% #this assumes that this name is somewhere in column #1. That follows some (most?) ESS-DIVE templates.
+ slice(which(Field_Name == "#Start_Data"):which(Field_Name == "#End_Data")) %>%
+ select(!Field_Name)
+  }
+
+noreporting_format_cleaning <- function(dataframe){
+  cleaned <- dataframe %>% 
+  janitor::row_to_names(row_number = which(dataframe[,1] == "Date")) #this assumes that this name is somewhere in column #1. This works for the thermocouple datasets
+  }
+```
+
+```{r bsle v3 data package cleaning}
+#subset_npoctdn <- npoctdn_clean %>% filter(str_detect(NPOC_mg_C_per_L, "Above") | str_detect(TN_mg_N_per_L, "Above"))
+#write.csv(subset_npoctdn, file = "/Users/barn772/OneDrive - PNNL/Desktop/subset_npoctdn.csv", row.names=FALSE)
+
+#wrote code so -9999 is NA, below LOD is NA, and if above or below standard curve then I pull out those values
+#these data are NOT correct because values are not dilution corrected
+#change this to 0.7 later
+npoctdn_clean <- essdive_template_cleaning(npoctdn) %>%
+  dplyr::rename(NPOC_mg_C_per_L = `00681_NPOC_mg_per_L_as_C`,
+         TN_mg_N_per_L = `00602_TN_mg_per_L_as_N`,
+         Sample_ID = Sample_Name) %>%
+  select(Sample_ID, NPOC_mg_C_per_L, TN_mg_N_per_L) %>%
+  filter(grepl('filt0.2', Sample_ID)) %>%
+  mutate(Sample_ID = stringr::str_remove(Sample_ID ,"-filt0.2"),
+         NPOC_mg_C_per_L = case_when(NPOC_mg_C_per_L == -9999 ~ NA,
+                              str_detect(NPOC_mg_C_per_L, "LOD") ~ NA,
+                              str_detect(NPOC_mg_C_per_L, "Below_0.1_ppm") ~
+                                      str_extract_part(NPOC_mg_C_per_L, "_ppm_Below_0.1_ppm", before = TRUE),
+                               TRUE ~ NPOC_mg_C_per_L),
+         TN_mg_N_per_L = case_when(TN_mg_N_per_L == -9999 ~ NA,
+                              str_detect(TN_mg_N_per_L, "LOD") ~ NA,
+                              str_detect(TN_mg_N_per_L, "Below_0.1_ppm") ~ 
+                                        str_extract_part(TN_mg_N_per_L, "_ppm_Below_0.1_ppm", before = TRUE),
+                               TRUE ~ TN_mg_N_per_L)) %>%
+  mutate(NPOC_mg_C_per_L = case_when(str_detect(NPOC_mg_C_per_L, "NPOC_") ~ 
+                                     str_extract(NPOC_mg_C_per_L, "(\\d+\\.\\d+)"),
+                                     NPOC_mg_C_per_L < 0 ~ NA,
+                                     TRUE ~ NPOC_mg_C_per_L),
+         TN_mg_N_per_L = case_when(str_detect(TN_mg_N_per_L, "TN_") ~ 
+                                     str_extract(TN_mg_N_per_L, "(\\d+\\.\\d+)"),
+                                     TN_mg_N_per_L < 0 ~ NA, 
+                                     TRUE ~ TN_mg_N_per_L)) %>%
+  mutate(NPOC_mg_C_per_L = as.numeric(NPOC_mg_C_per_L),
+         TN_mg_N_per_L = as.numeric(TN_mg_N_per_L))
+
+
+SolidCN_clean <- essdive_template_cleaning(SolidCN) %>%
+  dplyr::rename(C_weight_per = `01463_C_percent`,
+         N_weight_per = `01472_N_percent`,
+         Parent_ID = Sample_Name) %>%
+  select(Parent_ID, C_weight_per,  N_weight_per) %>%
+  filter(grepl('solid', Parent_ID)) %>%
+  mutate(Parent_ID = stringr::str_remove(Parent_ID ,"-solid"),
+         C_weight_per = case_when(C_weight_per == -9999 ~ NA,
+                                  str_detect(C_weight_per, "LOD") ~ NA,
+                                     TRUE ~ C_weight_per),
+         N_weight_per = case_when(N_weight_per == -9999 ~ NA,
+                                   str_detect(N_weight_per, "LOD") ~ NA,
+                                   TRUE ~ N_weight_per)) %>%
+   mutate(C_weight_per = as.numeric(C_weight_per),
+         N_weight_per = as.numeric(N_weight_per))
+
+#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+ICP_Solid_clean <- essdive_template_cleaning(ICP_Solid) %>%
+  dplyr::rename(Solid_Ca_mg_kg = '52718_Total_Ca_mg_per_kg',
+                Solid_Mg_mg_kg = '52719_Total_Mg_mg_per_kg',
+                Solid_P_mg_kg = 'Total_P_mg_per_kg',
+                Solid_K_mg_kg = '52720_Total_K_mg_per_kg',
+                Solid_Na_mg_kg = '52721_Total_Na_mg_per_kg',
+                Solid_S_mg_kg = '01466_Total_S_mg_per_kg',
+                Solid_Al_mg_kg = '01462_Total_Al_mg_per_kg',
+                Solid_Fe_mg_kg = '01464_Total_Fe_mg_per_kg',
+                Parent_ID = 'Sample_Name') %>%
+  mutate(Solid_Na_mg_kg = case_when(
+                Solid_Na_mg_kg == -9999 ~ NA,
+                str_detect(Solid_Na_mg_kg, "negative") ~ '0', 
+                str_detect(Solid_Na_mg_kg, "LOD") ~ NA, 
+                str_detect(Solid_Na_mg_kg, "TotNa_") ~ 
+                str_extract(Solid_Na_mg_kg, "(\\d+\\.\\d+)"),
+                TRUE ~ Solid_Na_mg_kg)) %>%
+   mutate_at(c(4:11), as.numeric) %>%
+  separate(col=Parent_ID, into = c("Parent_ID", "FilterSize"), sep="-")  %>%
+  filter(grepl('solid', FilterSize)) %>%
+  select(Parent_ID, Solid_Ca_mg_kg,  Solid_Mg_mg_kg, Solid_P_mg_kg, Solid_K_mg_kg, Solid_Na_mg_kg, Solid_S_mg_kg, Solid_Al_mg_kg, Solid_Fe_mg_kg)
+
+
+#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+ICP_Leachate_clean <- essdive_template_cleaning(ICP_Leachate) %>%
+  dplyr::rename(Leachate_Ca_mg_L = 'Total_Ca_mg_per_L',
+                Leachate_Mg_mg_L = 'Total_Mg_mg_per_L',
+                Leachate_P_mg_L = 'Total_P_mg_per_L',
+                Leachate_K_mg_L = 'Total_K_mg_per_L',
+                Leachate_Na_mg_L = 'Total_Na_mg_per_L',
+                Leachate_S_mg_L = 'Total_S_mg_per_L',
+                Leachate_Al_mg_L = 'Total_Al_mg_per_L',
+                Leachate_Fe_mg_L = 'Total_Fe_mg_per_L',
+                Sample_ID = 'Sample_Name') %>%
+  mutate(Leachate_Na_mg_L = case_when(
+                Leachate_Na_mg_L == -9999 ~ NA,
+                str_detect(Leachate_Na_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Na_mg_L, "LOD") ~ NA, 
+                str_detect(Leachate_Na_mg_L, "TotNa_") ~ 
+                str_extract(Leachate_Na_mg_L, "(\\d+\\.\\d+)"),
+                TRUE ~ Leachate_Na_mg_L)) %>%
+  mutate(Leachate_Al_mg_L = case_when(
+                Leachate_Na_mg_L == -9999 ~ NA,
+                str_detect(Leachate_Al_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Al_mg_L, "LOD") ~ NA, 
+                str_detect(Leachate_Al_mg_L, "TotNa_") ~ 
+                str_extract(Leachate_Al_mg_L, "(\\d+\\.\\d+)"),
+                TRUE ~ Leachate_Al_mg_L)) %>%
+  mutate(Leachate_Fe_mg_L = case_when(
+                Leachate_Fe_mg_L == -9999 ~ NA,
+                str_detect(Leachate_Fe_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Fe_mg_L, "LOD") ~ NA, 
+                str_detect(Leachate_Fe_mg_L, "TotNa_") ~ 
+                str_extract(Leachate_Fe_mg_L, "(\\d+\\.\\d+)"),
+                TRUE ~ Leachate_Fe_mg_L))  %>%
+  mutate_at(c(2:9), as.numeric) %>%
+  select(Sample_ID, Leachate_Ca_mg_L,  Leachate_Mg_mg_L, Leachate_P_mg_L, Leachate_K_mg_L, Leachate_Na_mg_L, Leachate_S_mg_L, Leachate_Al_mg_L, Leachate_Fe_mg_L) %>%
+  filter(grepl('filt', Sample_ID)) %>%
+  separate(col=Sample_ID, into = c("Sample_ID", "FilterSize"), sep="-") 
+
+ICP_Leachate_Filt_clean<- ICP_Leachate_clean %>%
+                filter(str_detect(FilterSize, "filt0.")) %>%
+  dplyr::rename(Leachate_Ca_mg_L_filt0.7 = 'Leachate_Ca_mg_L',
+                Leachate_Mg_mg_L_filt0.7 = 'Leachate_Mg_mg_L',
+                Leachate_P_mg_L_filt0.7 = 'Leachate_P_mg_L',
+                Leachate_K_mg_L_filt0.7 = 'Leachate_K_mg_L',
+                Leachate_Na_mg_L_filt0.7 = 'Leachate_Na_mg_L',
+                Leachate_S_mg_L_filt0.7 = 'Leachate_S_mg_L',
+                Leachate_Al_mg_L_filt0.7 = 'Leachate_Al_mg_L',
+                Leachate_Fe_mg_L_filt0.7 = 'Leachate_Fe_mg_L') %>%
+  select(Sample_ID, Leachate_Ca_mg_L_filt0.7,  Leachate_Mg_mg_L_filt0.7, Leachate_P_mg_L_filt0.7, Leachate_K_mg_L_filt0.7, Leachate_Na_mg_L_filt0.7, Leachate_S_mg_L_filt0.7, Leachate_Al_mg_L_filt0.7, Leachate_Fe_mg_L_filt0.7)
+
+ICP_Leachate_Unfilt_clean<- ICP_Leachate_clean %>%
+                filter(str_detect(FilterSize, "unfilt")) %>%
+  dplyr::rename(Leachate_Ca_mg_L_unfilt = 'Leachate_Ca_mg_L',
+                Leachate_Mg_mg_L_unfilt = 'Leachate_Mg_mg_L',
+                Leachate_P_mg_L_unfilt = 'Leachate_P_mg_L',
+                Leachate_K_mg_L_unfilt = 'Leachate_K_mg_L',
+                Leachate_Na_mg_L_unfilt = 'Leachate_Na_mg_L',
+                Leachate_S_mg_L_unfilt = 'Leachate_S_mg_L',
+                Leachate_Al_mg_L_unfilt = 'Leachate_Al_mg_L',
+                Leachate_Fe_mg_L_unfilt = 'Leachate_Fe_mg_L') %>%
+  select(Sample_ID, Leachate_Ca_mg_L_unfilt,  Leachate_Mg_mg_L_unfilt, Leachate_P_mg_L_unfilt, Leachate_K_mg_L_unfilt, Leachate_Na_mg_L_unfilt, Leachate_S_mg_L_unfilt, Leachate_Al_mg_L_unfilt, Leachate_Fe_mg_L_unfilt)
+
+
+#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value (value is corrected for dilution and subtracted by unreactive P to correct for color interference)
+MBD_Leachate_clean <- essdive_template_cleaning(MBD) %>%
+  dplyr::rename(Sample_ID = 'Sample_Name',
+                MBD_P_mg_per_L_filt0.7 = 'MBD_P_mg_per_L') %>%
+  mutate(MBD_P_mg_per_L_filt0.7 = case_when(
+                MBD_P_mg_per_L_filt0.7 == -9999 ~ NA,
+                str_detect(MBD_P_mg_per_L_filt0.7, "negative") ~ '0', 
+                str_detect(MBD_P_mg_per_L_filt0.7, "LOD") ~ NA, 
+                str_detect(MBD_P_mg_per_L_filt0.7, "Range") ~ 
+                str_extract(MBD_P_mg_per_L_filt0.7, "(\\d+\\.\\d+)"),
+                TRUE ~ MBD_P_mg_per_L_filt0.7)) %>%
+  mutate_at(c(2), as.numeric) %>%
+  filter(grepl('filt', Sample_ID)) %>%
+  separate(col=Sample_ID, into = c("Sample_ID", "FilterSize"), sep="-") %>%
+  select(Sample_ID, MBD_P_mg_per_L_filt0.7) 
+
+
+#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+ICP_PNMR_clean <- essdive_template_cleaning(ICP_PNMR) %>%
+  dplyr::rename(Parent_ID = 'Sample_Name') %>%
+  mutate_at(c(2:8), as.numeric) %>%
+  filter(grepl('solid', Parent_ID)) %>%
+  separate(col=Parent_ID, into = c("Parent_ID", "FilterSize"), sep="-") %>%
+  select(Parent_ID, Total_Extractable_Ca_mg_per_kg,  Total_Extractable_Mg_mg_per_kg, Total_Extractable_P_mg_per_kg, Total_Extractable_K_mg_per_kg,  Total_Extractable_S_mg_per_kg, Total_Extractable_Al_mg_per_kg, Total_Extractable_Fe_mg_per_kg) 
+```
+
+
+```{r combine and format data}
+#data<-SolidCN_clean %>% left_join(Meta, by = 'Parent_ID')
+#data<-ICP_Solid_clean %>% left_join(data, by = 'Parent_ID')
+#data<-ICP_PNMR_clean %>% left_join(data, by = 'Parent_ID')
+#data<-npoctdn_clean %>% left_join(data, by = 'Sample_ID')
+#data<-ICP_Leachate_Filt_clean %>% left_join(data, by = 'Sample_ID')
+#data<-ICP_Leachate_Unfilt_clean %>% left_join(data, by = 'Sample_ID')
+#data<-MBD_Leachate_clean %>% left_join(data, by = 'Sample_ID')
+
+
+data <- Meta %>%
+  full_join(SolidCN_clean, by = 'Parent_ID') %>%
+  full_join(ICP_Solid_clean, by = 'Parent_ID') %>%
+  full_join(ICP_PNMR_clean, by = 'Parent_ID') %>%
+  full_join(npoctdn_clean, by = 'Sample_ID') %>%
+  full_join(ICP_Leachate_Filt_clean, by = 'Sample_ID') %>%
+  full_join(ICP_Leachate_Unfilt_clean, by = 'Sample_ID') %>%
+  full_join(MBD_Leachate_clean, by = 'Sample_ID') %>%
+  mutate_at(c(6:43), as.numeric) %>%
+  filter(!is.na(Solid_P_mg_kg))
+
+#create a dataframe for only solids figures and stats to prevent having reps count as extra samples
+data_solids <- data %>%
+  filter(str_detect(Sample_ID, "A")) %>%
+  select(1:24) 
+```
+
+####Additional Calcs
+```{r Calcs}
+#NMR extraction efficiency
+data_solids<-data_solids %>%
+  mutate(NMR_EE_P_perc=Total_Extractable_P_mg_per_kg/Solid_P_mg_kg*100)
+
+#convert C and N of solids from percent to mg/kg
+data_solids<-data_solids %>%
+  mutate(Solid_C_mg_kg = (C_weight_per*10000),
+  Solid_N_mg_kg = (N_weight_per*10000))
+
+
+```
+
+
+##Figures and Stats
+
+####summary stats
+```{r solids and leachate summary}
+
+#NMR extraction efficiency
+summary_solids <- data_solids %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
+  dplyr::summarize(
+    Mean = mean(NMR_EE_P_perc, na.rm = TRUE),
+    Standard_Deviation = sd(NMR_EE_P_perc, na.rm = TRUE),
+    Count = n()
+  )
+
+```
+
+####Molybdate
+```{r MBD fig and stats}
+
+#convert to P relative to solid mass and water volume
+data<-data %>%
+  mutate(MBD_P_mg_kgchar = MBD_P_mg_per_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) 
+
+#normalize by P concentration in solid char
+data<-data %>%
+  mutate(MBD_P_percentofsolid = MBD_P_mg_kgchar/Solid_P_mg_kg*100)
+
+#MBD mg/L figure
+ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_per_L_filt0.7, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(mg~P~L^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+#MBD mg/kg figure; likely use this one for publication
+MBD.BS.fig<-ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_kgchar, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/MBD.BS.fig.pdf", MBD.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#MBD as percent of solid P concentration figure
+ggplot(data, aes(x=Burn_Severity, y=MBD_P_percentofsolid, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab("Soluble Reactive P (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+#MBD mg/kg stats; likely use this one for publication
+#need to figure out how to transform the data to meet assumptions
+model<-lmer(log(MBD_P_mg_kgchar)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+summary(model)
+vif(model)
+#check normality of residuals 
+ggqqplot(residuals(model))
+shapiro_test(residuals(model)) #sig = bad 
+#check homogeneity of variance assumption 
+data %>% levene_test(log(MBD_P_mg_kgchar) ~ Burn_Severity*Land_Coverage_Category) #sig = bad
+#leveneTest(residuals(model) ~ MBD$Burn_Severity*Land_Coverage_Category)
+#plotNormalHistogram(residuals(model))
+#qqnorm(residuals(model))
+#qqline(residuals(model), col="blue")
+
+#can't use these b/c fixed effects nor interaction aren't significant
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
+
+```
+
+
+####ICP Leachates
+```{r leachate ICP fig and stats}
+
+#calculate particulate concentrations as the difference between filtered and unfiltered
+data<-data %>%
+  mutate(Leachate_Ca_mg_L_part = Leachate_Ca_mg_L_unfilt - Leachate_Ca_mg_L_filt0.7) %>%
+  mutate(Leachate_Mg_mg_L_part = Leachate_Mg_mg_L_unfilt - Leachate_Mg_mg_L_filt0.7) %>%
+  mutate(Leachate_P_mg_L_part = Leachate_P_mg_L_unfilt - Leachate_P_mg_L_filt0.7) %>%
+  mutate(Leachate_K_mg_L_part = Leachate_K_mg_L_unfilt - Leachate_K_mg_L_filt0.7) %>%
+  mutate(Leachate_Na_mg_L_part = Leachate_Na_mg_L_unfilt - Leachate_Na_mg_L_filt0.7) %>%
+  mutate(Leachate_S_mg_L_part = Leachate_S_mg_L_unfilt - Leachate_S_mg_L_filt0.7) %>%
+  mutate(Leachate_Al_mg_L_part = Leachate_Al_mg_L_unfilt - Leachate_Al_mg_L_filt0.7) %>%
+  mutate(Leachate_Fe_mg_L_part = Leachate_Fe_mg_L_unfilt - Leachate_Fe_mg_L_filt0.7)
+
+#convert to P relative to solid mass and water volume for the soluble and particulate fractions
+data<-data %>%
+  mutate(Leachate_Ca_mg_kgchar_part = Leachate_Ca_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Mg_mg_kgchar_part  = Leachate_Mg_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_P_mg_kgchar_part  = Leachate_P_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_K_mg_kgchar_part  = Leachate_K_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Na_mg_kgchar_part  = Leachate_Na_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_S_mg_kgchar_part  = Leachate_S_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Al_mg_kgchar_part  = Leachate_Al_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Fe_mg_kgchar_part  = Leachate_Fe_mg_L_part*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Ca_mg_kgchar_filt0.7 = Leachate_Ca_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Mg_mg_kgchar_filt0.7 = Leachate_Mg_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_P_mg_kgchar_filt0.7 = Leachate_P_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_K_mg_kgchar_filt0.7 = Leachate_K_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Na_mg_kgchar_filt0.7 = Leachate_Na_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_S_mg_kgchar_filt0.7 = Leachate_S_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Al_mg_kgchar_filt0.7 = Leachate_Al_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Fe_mg_kgchar_filt0.7 = Leachate_Fe_mg_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Ca_mg_kgchar_unfilt = Leachate_Ca_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Mg_mg_kgchar_unfilt  = Leachate_Mg_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_P_mg_kgchar_unfilt = Leachate_P_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_K_mg_kgchar_unfilt  = Leachate_K_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Na_mg_kgchar_unfilt  = Leachate_Na_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_S_mg_kgchar_unfilt  = Leachate_S_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Al_mg_kgchar_unfilt  = Leachate_Al_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
+  mutate(Leachate_Fe_mg_kgchar_unfilt = Leachate_Fe_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000)
+
+
+
+#normalize by P concentration in solid char
+data<-data %>%
+  mutate(Leachate_Ca_perc_solid_part = Leachate_Ca_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Mg_perc_solid_part = Leachate_Mg_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_P_perc_solid_part = Leachate_P_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_K_perc_solid_part = Leachate_K_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Na_perc_solid_part = Leachate_Na_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_S_perc_solid_part = Leachate_S_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Al_perc_solid_part = Leachate_Al_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Fe_perc_solid_part = Leachate_Fe_mg_kgchar_part/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Ca_perc_solid_filt0.7 = Leachate_Ca_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Mg_perc_solid_filt0.7 = Leachate_Mg_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_P_perc_solid_filt0.7 = Leachate_P_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_K_perc_solid_filt0.7 = Leachate_K_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Na_perc_solid_filt0.7 = Leachate_Na_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_S_perc_solid_filt0.7 = Leachate_S_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Al_perc_solid_filt0.7 = Leachate_Al_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
+  mutate(Leachate_Fe_perc_solid_filt0.7 = Leachate_Fe_mg_kgchar_filt0.7/Solid_P_mg_kg*100)
+
+#convert to percent of total P in unfiltered sample
+#ICP$P.filt.percentofunfilt<-(ICP$Total_P_mg_per_L_filt/ICP$Total_P_mg_per_L_unfilt)*100
+#ICP$P.part.percentofunfilt<-(ICP$Total_P_mg_per_L_part/ICP$Total_P_mg_per_L_unfilt)*100
+
+#total P in unfilted leachate
+Leachate.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg_kgchar_unfilt, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Total~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/Leachate.total.P.BS.boxplot.pdf", Leachate.total.P.BS.boxplot, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+model<-lmer(log(Leachate_P_mg_kgchar_unfilt)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+summary(model)
+vif(model)
+#check normality of residuals 
+ggqqplot(residuals(model))
+shapiro_test(residuals(model)) #sig = bad 
+#check homogeneity of variance assumption 
+MBD %>% levene_test(log(P.percentofsolid) ~ Burn_Severity*Land_Coverage_Category) #not sig = good
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
+
+Leachate.filt0.7.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg_kgchar_filt0.7, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Total~Soluble~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/Leachate.filt0.7.total.P.BS.boxplot.pdf", Leachate.filt0.7.total.P.BS.boxplot, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+Leachate.unfilt.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg_kgchar_part, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Total~Particulate~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/Leachate.unfilt.total.P.BS.boxplot.pdf", Leachate.unfilt.total.P.BS.boxplot, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+```
+
+####Solid ICP
+```{r solid fig and stats}
+solid.P.BS.fig<-ggplot(data_solids, aes(x=Burn_Severity, y=Solid_P_mg_kg, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+```
+
+
+####Correlations
+```{r elemental correlations}
+
+#across both feedstocks
+#subset only solid elemental concentrations (in mg/kg)
+data_solids_corr <- data_solids %>%
+  select(matches("Solid"))
+
+# Rename columns by extracting everything between "Solid_" and "mg_Kg"
+data_solids_corr <- data_solids_corr %>%
+  rename_with(
+    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
+    starts_with("Solid_")) %>%
+  select(P, C, N, Ca, Mg, Na, Fe, Al, S, K)
+
+#comput r=the correlation matrix, n=the matrix of the number of observations used in analyzing each pari fo variables, and P=the p-values corresponding to the significance levels of correlations
+cor_5 <- rcorr(as.matrix(data_solids_corr), type=c("spearman"))
+#define M as the correlation coefficient
+M <- cor_5$r
+#define p_mat as the p-value
+p_mat <- cor_5$P 
+#plot only significant pearson correlation coeffcients when p value >0.05
+corrplot(M, type = "upper", p.mat = p_mat, sig.level = 0.05, insig = "blank", tl.col = "black", diag=FALSE, na.label="NA", tl.cex=1, cl.cex = 1, number.cex = 0.8, addCoef.col = "white", col = colorRampPalette(c("#346648", "#dbb40d"))(100))
+
+
+#Douglas-fir forest
+#subset only solid elemental concentrations (in mg/kg)
+data_solids_corr <- data_solids  %>%
+  filter(str_detect(Land_Coverage_Category, "Douglas")) %>%
+  select(matches("Solid"))
+
+# Rename columns by extracting everything between "Solid_" and "mg_Kg"
+data_solids_corr <- data_solids_corr %>%
+  rename_with(
+    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
+    starts_with("Solid_")) %>%
+  select(P, C, N, Ca, Mg, Na, Fe, Al, S, K)
+
+#comput r=the correlation matrix, n=the matrix of the number of observations used in analyzing each pari fo variables, and P=the p-values corresponding to the significance levels of correlations
+cor_5 <- rcorr(as.matrix(data_solids_corr), type=c("spearman"))
+#define M as the correlation coefficient
+M <- cor_5$r
+#define p_mat as the p-value
+p_mat <- cor_5$P 
+#plot only significant pearson correlation coeffcients when p value >0.05
+corrplot(M, type = "upper", p.mat = p_mat, sig.level = 0.05, insig = "blank", tl.col = "black", diag=FALSE, na.label="NA", tl.cex=1, cl.cex = 1, number.cex = 0.8, addCoef.col = "white", col = colorRampPalette(c("#346648", "#dbb40d"))(100))
+
+
+
+#Big sagebrush
+#subset only solid elemental concentrations (in mg/kg)
+data_solids_corr <- data_solids  %>%
+  filter(str_detect(Land_Coverage_Category, "Sagebrush")) %>%
+  select(matches("Solid"))
+
+# Rename columns by extracting everything between "Solid_" and "mg_Kg"
+data_solids_corr <- data_solids_corr %>%
+  rename_with(
+    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
+    starts_with("Solid_")) %>%
+  select(P, C, N, Ca, Mg, Na, Fe, Al, S, K)
+
+#comput r=the correlation matrix, n=the matrix of the number of observations used in analyzing each pari fo variables, and P=the p-values corresponding to the significance levels of correlations
+cor_5 <- rcorr(as.matrix(data_solids_corr), type=c("spearman"))
+#define M as the correlation coefficient
+M <- cor_5$r
+#define p_mat as the p-value
+p_mat <- cor_5$P 
+#plot only significant pearson correlation coeffcients when p value >0.05
+corrplot(M, type = "upper", p.mat = p_mat, sig.level = 0.05, insig = "blank", tl.col = "black", diag=FALSE, na.label="NA", tl.cex=1, cl.cex = 1, number.cex = 0.8, addCoef.col = "white", col = colorRampPalette(c("#346648", "#dbb40d"))(100))
+```
+
+```{r P w/ CN}
+#P and C
+ggplot(data_solids, aes(x=Solid_C_mg_kg, y=Solid_P_mg_kg, color = Land_Coverage_Category)) + geom_point() + geom_smooth(method="lm", se = FALSE) + theme_classic() + scale_color_manual(values = c("#346648", "#dbb40d"))
+
+#all feedstocks
+model<-lm(log(Solid_C_mg_kg)~log(Solid_P_mg_kg), data = data_solids)
+summary(model)
+#Douglas fir only
+model<-lm(log(Solid_C_mg_kg)~log(Solid_P_mg_kg), data = subset(data_solids, Land_Coverage_Category=="Douglas-fir forest"))
+summary(model)
+#sagebrush
+model<-lm(log(Solid_C_mg_kg)~log(Solid_P_mg_kg), data = subset(data_solids, Land_Coverage_Category=="Sagebrush shrubland"))
+summary(model)
+
+
+
+#P and N
+ggplot(data_solids, aes(x=Solid_N_mg_kg, y=Solid_P_mg_kg, color = Land_Coverage_Category)) + geom_point() + geom_smooth(method="lm", se = FALSE) + theme_classic() + scale_color_manual(values = c("#346648", "#dbb40d"))
+
+#all feedstocks
+model<-lm(log(Solid_N_mg_kg)~log(Solid_P_mg_kg), data = data_solids)
+summary(model)
+#Douglas fir only
+model<-lm(log(Solid_N_mg_kg)~log(Solid_P_mg_kg), data = subset(data_solids, Land_Coverage_Category=="Douglas-fir forest"))
+summary(model)
+#sagebrush
+model<-lm(log(Solid_N_mg_kg)~log(Solid_P_mg_kg), data = subset(data_solids, Land_Coverage_Category=="Sagebrush shrubland"))
+summary(model)
+
+
+
+```
+
+
+####RDAs
+```{r PCA solid bulk chem}
+#PCA of elemental concentration of the solid chars with burn severity and feedstock
+
+#format dataframe using same code as correlation and then also remove NAs
+data_solids_corr <- data_solids %>%
+  rename_with(
+    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
+    starts_with("Solid_")) %>%
+  select(Burn_Severity, Land_Coverage_Category, P, C, N, Ca, Mg, Na, Fe, Al, S, K) %>%
+  na.omit(data_solids)
+
+pca <- prcomp(data_solids_corr[3:12], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(data_solids_corr[3:12])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 10
+yscale <- 10
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_solids_corr$Land_Coverage_Category,shape=data_solids_corr$Burn_Severity),size=3)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)
+
+
+```
+
+```{r PCA leachate bulk chem}
+
+
+```
+
+
+
+
+#haven't updated below here yet (NMR and XANES code)
+
+```{r}
+#RDA for XANES
+#RDA for speciation relative percent being predicted by EEMT, MAP, MAT, clay %, DI pH, Fe conc, Al conc, Ca conc, C conc, P conc; seperate for climosequences 
+
+#this is example code of how to do an RDA
+#reference: http://dmcglinn.github.io/quant_methods/lessons/multivariate_models.html
+#other reference: https://popgen.nescent.org/2018-03-27_RDA_GEA.html
+#citation in here: https://cran.r-project.org/web/packages/vegan/vignettes/FAQ-vegan.html
+#good RDA info: https://mb3is.megx.net/gustame/constrained-analyses/rda
+
+#Use (all samples in A, B, and C horizons relative percent)
+#make spreadsheet
+Master_CZO_WM_Soil_5.8.2020 <- read.csv("~/Documents/Research Notes/Dissertation General/Master_CZO_WM_Soil_5.8.2020.csv")
+Master_CZO_WM_Soil_5.8.2020$Climo<-factor(Master_CZO_WM_Soil_5.8.2020$Climo, levels=c("WM", "CZO"))
+xas.percent<-subset(Master_CZO_WM_Soil_5.8.2020, Sample.Type=="Soil")
+xas.percent<-xas.percent[ , c("Horizon.Category.C",  "Climo", "Site", "EEMT", "AI", "MAT", "MAP","pH.CaCl2", "Clay.Percent", "Fe.g.kgsoil.PMnorm", "Ca.g.kgsoil.PMnorm", "Al.g.kgsoil.PMnorm", "C.g.kgsoil", "P.g.kgsoil.PMnorm", "N.g.kgsoil", "Ca.Pi.Percent", "Al.Pi.Percent", "Fe.Pi.Percent", "XANES.Total.Monoester.Percent", "XANES.Total.Diester.Percent")]
+xas.percent<-subset(xas.percent, Ca.Pi.Percent!="NA")
+colnames(xas.percent)[1:20]<-c("Horizon",  "Gradient", "Site","EEMT", "Humidity", "MAT", "MAP","pH", "Clay", "Fe", "Ca", "Al", "C", "P", "N", "Ca-Pi", "Al-Pi", "Fe-Pi", "Monoester", "Diester")
+
+#remove NAs 
+xas.percent<-subset(xas.percent, Clay!="NA")
+xas.percent<-subset(xas.percent, pH!="NA")
+xas.percent<-subset(xas.percent, Site!="NA")
+#check no NA in XANES and that 0 is included for when samples didn't have a species 
+
+
+#make RDA with site colored (climo together for this one)
+#load libraries
+library(vegan)
+library(psych)
+
+#create dataframe for sample variables
+samples<-xas.percent[ -c(1:15)]
+#create dataframe for environmental variables
+enviro<-xas.percent[ -c(16:20)]
+
+#make sure both dataframes have equal rows
+all.equal(rownames(samples), rownames(enviro))
+
+#RDA (this anaysis expects a linear response of each sample to the environmental variables)
+rda_tree=rda(samples~ . , data=enviro[4:15])
+rda_tree
+RsquareAdj(rda_tree)
+summary(eigenvals(rda_tree, model = "constrained"))
+
+#reference about scaling: https://mb3is.megx.net/gustame/constrained-analyses/rda
+
+#see the factor loadings (correlations of each variable with each pca axis)
+scores(rda_tree, choices=1:2, display="species", scaling=2)
+
+#plot it
+plot(rda_tree, type='n', scaling=2)
+orditorp(rda_tree, display='sp', cex=0.5, scaling=2, col='blue')
+text(rda_tree, display='cn', col='red')
+
+#check correlation
+pairs.panels(enviro[,4:15], scale=T)
+
+#can visualize RDA importance
+screeplot(rda_tree)
+
+#check significance of all PCAs
+signif.full <- anova.cca(rda_tree, parallel=getOption("mc.cores")) # default is permutation=999
+signif.full #model is significant
+
+#check significance of individual PCAs
+signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
+signif.axis #only RDA1 and RDA 2 are sig
+
+#check VIF
+vif.cca(rda_tree) #VIF is highest (4.23) for Aluminum
+
+#compare the model to chance with permutation test
+anova(rda_tree)
+
+#plot again
+plot(rda_tree, scaling=2) #Here, the elemental concentrations are in red (in the center of each plot), and the individuals are the black circles. The blue vectors are the environmental predictors. The relative arrangement of these items in the ordination space reflects their relationship with the ordination axes, which are linear combinations of the predictor variables.
+
+#make a pretty plot
+#use
+#USE THIS ONE AS AN EXAMPLE!! (has horizons as difference shapes but need to figure out legend)
+levels(enviro$Site) <- c("GR2","GR3","GR5","BAR","SJER","SPR", "PR", "SH")
+eco <- enviro$Site
+bgg <- c("#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1") # 8 colors for our sites
+shapes <- c(18, 16, 15,17) 
+sh <- as.factor(enviro$Horizon)
+plot(rda_tree, type="n", scaling=2)
+points(rda_tree, display="species", pch=20, cex=0.7, col="gray32", scaling=2)           #the chemical species from NMR and XANES
+points(rda_tree, display="sites", pch=shapes[sh], cex=1.3, scaling=2, col=bgg[eco]) # the soil samples
+text(rda_tree, scaling=2, display="bp", col="#0868ac", cex=1)                           # the predictors
+#legend("bottomright", legend=levels(eco), bty="n", pch=21, cex=1, col=bg)
+legend("bottomright", legend=c("A", "B", "C", "GR2", "GR3", "GR5", "BAR", "SJER", "SPR", "PR", "SH"), col=c(rep("black",3), "#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1"), pch=c(16, 15, 17, 16, 16, 16, 16, 16, 16, 16, 16))
+
+
+#surface horizons only
+Master_CZO_WM_Soil_5.8.2020 <- read.csv("~/Documents/Research Notes/Dissertation General/Master_CZO_WM_Soil_5.8.2020.csv")
+Master_CZO_WM_Soil_5.8.2020$Climo<-factor(Master_CZO_WM_Soil_5.8.2020$Climo, levels=c("WM", "CZO"))
+xas.percent<-subset(Master_CZO_WM_Soil_5.8.2020, Sample.Type=="Soil")
+xas.percent<-xas.percent[ , c("Horizon.Category.C",  "Climo", "Site", "EEMT", "AI", "MAT", "MAP","pH.CaCl2", "Clay.Percent", "Fe.g.kgsoil.PMnorm", "Ca.g.kgsoil.PMnorm", "Al.g.kgsoil.PMnorm", "C.g.kgsoil", "P.g.kgsoil.PMnorm", "N.g.kgsoil", "Ca.Pi.Percent", "Al.Pi.Percent", "Fe.Pi.Percent", "XANES.Total.Monoester.Percent", "XANES.Total.Diester.Percent")]
+xas.percent<-subset(xas.percent, Ca.Pi.Percent!="NA")
+colnames(xas.percent)[1:20]<-c("Horizon",  "Gradient", "Site","EEMT", "Humidity", "MAT", "MAP","pH", "Clay", "Fe", "Ca", "Al", "C", "P", "N", "Ca-Pi", "Al-Pi", "Fe-Pi", "Monoester", "Diester")
+xas.percent<-subset(xas.percent, Horizon=="A")
+
+#remove NAs 
+xas.percent<-subset(xas.percent, Clay!="NA")
+xas.percent<-subset(xas.percent, pH!="NA")
+xas.percent<-subset(xas.percent, Site!="NA")
+#check no NA in XANES and that 0 is included for when samples didn't have a species 
+
+
+#make RDA with site colored (climo together for this one)
+#load libraries
+library(vegan)
+library(psych)
+
+#create dataframe for sample variables
+samples<-xas.percent[ -c(1:15)]
+#create dataframe for environmental variables
+enviro<-xas.percent[ -c(16:20)]
+
+#make sure both dataframes have equal rows
+all.equal(rownames(samples), rownames(enviro))
+
+#RDA (this anaysis expects a linear response of each sample to the environmental variables)
+rda_tree=rda(samples~ . , data=enviro[6:15])
+rda_tree
+RsquareAdj(rda_tree)
+summary(eigenvals(rda_tree, model = "constrained"))
+
+#reference about scaling: https://mb3is.megx.net/gustame/constrained-analyses/rda
+
+#see the factor loadings (correlations of each variable with each pca axis)
+scores(rda_tree, choices=1:2, display="species", scaling=2)
+
+#plot it
+plot(rda_tree, type='n', scaling=2)
+orditorp(rda_tree, display='sp', cex=0.5, scaling=2, col='blue')
+text(rda_tree, display='cn', col='red')
+
+#check correlation
+pairs.panels(enviro[,6:15], scale=T)
+
+#can visualize RDA importance
+screeplot(rda_tree)
+
+#check significance of all PCAs
+signif.full <- anova.cca(rda_tree, parallel=getOption("mc.cores")) # default is permutation=999
+signif.full #model is significant
+
+#check significance of individual PCAs
+signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
+signif.axis #only RDA1 and RDA 2 are sig
+
+#check VIF
+vif.cca(rda_tree) #VIF is highest (4.23) for Aluminum
+
+#compare the model to chance with permutation test
+anova(rda_tree)
+
+#plot again
+plot(rda_tree, scaling=2) #Here, the elemental concentrations are in red (in the center of each plot), and the individuals are the black circles. The blue vectors are the environmental predictors. The relative arrangement of these items in the ordination space reflects their relationship with the ordination axes, which are linear combinations of the predictor variables.
+
+#make a pretty plot
+#use
+levels(enviro$Site) <- c("GR2","GR3","GR5","BAR","SJER","SPR", "PR", "SH")
+eco <- enviro$Site
+bg <- c("#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1") # 8 colors for our sites
+#shapes = c(15, 16, 17) 
+#shapes <- shapes[as.numeric(rda_tree$Horizon)]
+plot(rda_tree, type="n", scaling=2)
+points(rda_tree, display="species", pch=20, cex=0.7, col="gray32", scaling=2)           #the chemical species from NMR and XANES
+points(rda_tree, display="sites", pch=21, cex=1.3, col="gray32", scaling=2, bg=bg[eco]) # the soil samples
+text(rda_tree, scaling=2, display="bp", col="#0868ac", cex=1)                           # the predictors
+legend("bottomright", legend=levels(eco), bty="n", col="gray32", pch=21, cex=1, pt.bg=bg)
+```
+
+
+
+```{r NMR}
+NMR<-subset(NMR, Sample=="Leachate")
+NMR<-subset(NMR, Deg.Corr=="Yes")
+data<-NMR %>% left_join(metadata)
+data<-subset(data, Burn_Treatment=="burn table" | Burn_Treatment=="raw")
+data<-data[grep("A", data$Sample_Name, ignore.case=TRUE), ]
+
+
+data<-melt(data, id=c("Parent_ID", "Sample", "Deg.Corr", "Sample_Name", "Land_Coverage_Category","Burn_Treatment", "Burn_Severity", "Char_Leached", "Leachate_Volume"))
+
+summary.nmr.solid.deg.corr<-data %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  dplyr::summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+
+write.csv(summary.nmr.solid.deg.corr, file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P NMR/Processed_Final/summary.nmr.solid.deg.corr.csv")
+
+summary.nmr.solid.deg.corr$variable=factor(summary.nmr.solid.deg.corr$variable, levels= c("Ortho", "Pyro", "Mono", "Di"))
+
+#no Pi or Po label: option 1
+nmr.stacked.bar.noPiPo<-ggplot(summary.nmr.solid.deg.corr, aes(x=Burn_Severity, y=mean, fill=variable)) + geom_bar(stat="identity") + theme_classic() + facet_grid(.~Land_Coverage_Category)+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3", "brown3", "tomato4"))+ theme(axis.text.x = element_text(angle = 45, hjust=1), legend.title = element_blank(),text = element_text(size = 15))+labs(x= "Burn Severity",y="Relative Percent (%)")
+
+data<-summary.nmr.solid.deg.corr
+
+#add PiPo Column
+data$PiPo[data$variable=='Ortho' | data$variable=='Pyro']<-"Pi"
+data$PiPo[data$variable=='Mono' | data$variable=='Di']<-"Po"
+
+#Pi and Po labelled: option 2
+nmr.stacked.bar.PiPo<-ggplot(data, aes(x=Burn_Severity, y=mean, fill=variable,  pattern=PiPo)) + geom_bar_pattern(stat="identity",color = "black", 
+                   pattern_fill = "black",
+                   pattern_angle = 45,
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.05,
+                   pattern_key_scale_factor = 0.6)+ theme_classic()+facet_grid(.~Land_Coverage_Category)+scale_fill_manual(values=c("#346648", "#83aa8b",  "#dbb40d", "lightgoldenrod","red4"))+scale_pattern_manual(values = c(Pi = "none", Po = "stripe"))+ theme(axis.text.x = element_text(angle = 45, hjust=1))+labs(x= "Burn Severity",y="Relative Percent (%)",pattern = "") + 
+  guides(pattern = guide_legend(override.aes = list(fill = "white")),
+         fill = guide_legend(override.aes = list(pattern = "none")))+ theme(legend.title = element_blank(),text = element_text(size = 15))
+
+DF.raw<-subset(summary.nmr.solid.deg.corr, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+DF.raw.nmr<-ggplot(DF.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+DF.low<-subset(summary.nmr.solid.deg.corr, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+DF.raw.nmr<-ggplot(DF.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+DF.mod<-subset(summary.nmr.solid.deg.corr, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+DF.raw.nmr<-ggplot(DF.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+DF.high<-subset(summary.nmr.solid.deg.corr, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+DF.raw.nmr<-ggplot(DF.high, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+```
+
+```{r XANES calcs}
+XANES <- read.csv("~/Library/CloudStorage/OneDrive-SharedLibraries-PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P XAS/BLSE_R_Code_Testing/Sample_LCF_Details_8.2.23.csv")
+
+XANES<-subset(XANES, Pi_Al_GibbSorb_std!="")
+
+XANES$Pi_Ca<-XANES$Pi_Apatite_CaDefHydroxy_std+XANES$Pi_Apatite_Carbonate_std+XANES$Pi_Apatite_Fluor_std+XANES$Pi_Ca_Mono_std+XANES$Pi_Ca_Octa_std+XANES$Pi_Ca_Pyro_std+XANES$Pi_Ca_Tri_std
+
+XANES$Po_Ca<-XANES$Po_Ca_Lecithin_std+XANES$Po_Ca_PA_std
+
+XANES$Pi_Fe<-XANES$Pi_Fe_FerriSorb_2_std+XANES$Pi_Fe_FerriSorb_std+XANES$Pi_Fe_GoethSorb_2_std+XANES$Pi_Fe_GoethSorb_std+XANES$Pi_Fe_std
+
+XANES$Po_Fe<-XANES$Po_Fe_DNA_GoethSorb_std+XANES$Po_Fe_PA_FerriSorb_std+XANES$Po_Fe_PA_GoethSorb_std
+
+XANES$Pi_Na<-XANES$Pi_Na_Di_std+XANES$Pi_Na_Tri_std
+
+XANES$Po_Na<-XANES$Po_Na_AMP_std+XANES$Po_Na_ATP_std+XANES$Po_Na_DNA_std+XANES$Po_Na_PA_std
+
+XANES$Pi_Al<-XANES$Pi_Al_GibbSorb_std
+
+XANES$Po_Al<-XANES$Po_Al_DNA_GibbSorb_2_std+XANES$Po_Al_PA_GibbSorb_std+XANES$Po_Al_PA_Precip_std
+
+XANES$Pi_Mg<-XANES$Pi_Mg_Di_std+XANES$Pi_Mg_Tri_std+XANES$Pi_NH4_Mg_std
+
+XANES$Pi_K<-XANES$Pi_K_Di_std+XANES$Pi_K_Pyro_std
+
+XANES$Pi<-XANES$Pi_Al+XANES$Pi_Ca+XANES$Pi_K+XANES$Pi_Fe+XANES$Pi_Na+XANES$Pi_Mg
+
+XANES$Po<-XANES$Po_Fe+XANES$Po_Na+XANES$Po_Al+XANES$Po_Ca
+
+XANES$SUM<-XANES$Pi+XANES$Po
+
+
+```
+
+```{rr XANES figs}
+XANES<-XANES[ -c(2:40)]
+
+data<-XANES %>%
+  separate(col=File_Name, into = c("Element", "StudyCode", "ID", "SampleType", "Sample"), sep="_") %>%
+  mutate(Parent_ID= paste(StudyCode, ID, sep="_"))
+
+data<-data[ -c(1:3,5)]
+
+data<-data %>% left_join(metadata)
+
+data<-data[grepl("A", data$Sample_Name), ]
+
+data<-subset(data, Burn_Severity!="")
+
+solid<-subset(data, SampleType=="solid")
+part<-subset(data, SampleType=="part")
+filt<-subset(data, SampleType=="filt07")
+
+
+solid<-melt(solid, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+part<-melt(part, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+filt<-melt(filt, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+
+summary.xanes.solid<-solid %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+summary.xanes.part<-part %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+summary.xanes.filt<-filt %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+
+summary.solid<-subset(summary.xanes.solid, variable!="Pi" & variable!="Po" & variable!="SUM")
+summary.part<-subset(summary.xanes.part, variable!="Pi" & variable!="Po" & variable!="SUM")
+summary.filt<-subset(summary.xanes.filt, variable!="Pi" & variable!="Po" & variable!="SUM")
+
+solid<-subset(solid, variable!="Pi" & variable!="Po" & variable!="SUM")
+part<-subset(part, variable!="Pi" & variable!="Po" & variable!="SUM")
+filt<-subset(filt, variable!="Pi" & variable!="Po" & variable!="SUM")
+
+ggplot(solid, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot()+facet_grid(variable~Land_Coverage_Category)+theme_classic()+ xlab("Burn Severity")+ ylab("Relative Percent")+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d"))+ggtitle("P XANES: BSLE Solids")
+
+ggplot(part, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot()+facet_grid(variable~Land_Coverage_Category)+theme_classic()+ xlab("Burn Severity")+ ylab("Relative Percent")+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d"))+ggtitle("P XANES: BSLE Particulate")
+
+ggplot(filt, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot()+facet_grid(variable~Land_Coverage_Category)+theme_classic()+ xlab("Burn Severity")+ ylab("Relative Percent")+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d"))+ggtitle("P XANES: BSLE Soluble")
+
+ggplot(solid, aes(fill=variable, y=value, x=Burn_Severity)) + 
+    geom_bar(position="fill", stat="identity")+theme_classic()+facet_grid(.~Land_Coverage_Category)+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3", "brown3", "tomato4", "gray", "blue", "red"))+ggtitle("P XANES: BSLE Solids")
+
+
+#trying pie chart instead
+DF_unburn_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+
+ggplot(DF_unburn_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648","#83aa8b","#dbb40d","lightgoldenrod","black", "gray" ,"#8c564b", "#c49c94", "lightsalmon3", "orange1", "cadetblue3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+, "darkorange3",  "indianred3" "deepskyblue4",
+
+DF_low_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+
+ggplot(DF_low_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+DF_moderate_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+
+ggplot(DF_moderate_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_High_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+
+ggplot(DF_High_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+
+DF_unburn_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+
+ggplot(DF_unburn_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_low_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+
+ggplot(DF_low_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+DF_moderate_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+
+ggplot(DF_moderate_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_High_filt<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+
+ggplot(DF_High_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d", "red", "blue", "grey"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+
+
+
+#changing grouping to be only the metals
+data<-XANES %>%
+  separate(col=File_Name, into = c("Element", "StudyCode", "ID", "SampleType", "Sample"), sep="_") %>%
+  mutate(Parent_ID= paste(StudyCode, ID, sep="_"))
+
+data<-data[ -c(1:3,5)]
+
+data$Ca<-data$Pi_Ca+data$Po_Ca
+data$Al<-data$Pi_Al+data$Po_Al
+data$Mg<-data$Pi_Mg
+data$K<-data$Pi_K
+data$Na<-data$Pi_Na+data$Po_Na
+data$Fe<-data$Pi_Fe+data$Po_Fe
+
+data<-data[ -c(2:14)]
+
+data<-data %>% left_join(metadata)
+
+data<-data[grepl("A", data$Sample_Name), ]
+
+data<-subset(data, Burn_Severity!="")
+
+solid<-subset(data, SampleType=="solid")
+part<-subset(data, SampleType=="part")
+filt<-subset(data, SampleType=="filt07")
+
+
+solid<-melt(solid, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+part<-melt(part, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+filt<-melt(filt, id=c("SampleType", "Parent_ID", "Sample_Name", "Land_Coverage_Category","Burn_Severity", "Burn_Treatment",  "Char_Leached", "Leachate_Volume"))
+
+summary.xanes.solid<-solid %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+summary.xanes.part<-part %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+summary.xanes.filt<-filt %>%
+  group_by(variable, Burn_Severity, Land_Coverage_Category) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+
+summary.solid<-summary.xanes.solid
+summary.part<-summary.xanes.part
+summary.filt<-summary.xanes.filt
+
+
+#trying pie chart instead
+DF_unburn_solid<-subset(summary.solid, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+
+ggplot(DF_unburn_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+, "darkorange3",  "indianred3" "deepskyblue4","black", "gray" ,"#8c564b", "#c49c94", "orange1", "cadetblue3"
+
+ "#F28E2B",  "#9C755F",  "#BAB0AC", "#79706E", "#B07AA1", "#4E79A7", "#DAA51B", "#EDC949","#59A14F"
+
+DF_low_solid<-subset(summary.solid, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+
+ggplot(DF_low_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+DF_moderate_solid<-subset(summary.solid, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+
+ggplot(DF_moderate_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_High_solid<-subset(summary.solid, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+
+ggplot(DF_High_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+
+SS_unburn_solid<-subset(summary.solid, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
+
+ggplot(SS_unburn_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+, "darkorange3",  "indianred3" "deepskyblue4","black", "gray" ,"#8c564b", "#c49c94", "orange1", "cadetblue3"
+
+ "#F28E2B",  "#9C755F",  "#BAB0AC", "#79706E", "#B07AA1", "#4E79A7", "#DAA51B", "#EDC949","#59A14F"
+
+SS_low_solid<-subset(summary.solid, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Low")
+
+ggplot(SS_low_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+SS_moderate_solid<-subset(summary.solid, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Moderate")
+
+ggplot(SS_moderate_solid, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+
+SS_unburn_part<-subset(summary.part, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
+
+ggplot(SS_unburn_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+, "darkorange3",  "indianred3" "deepskyblue4","black", "gray" ,"#8c564b", "#c49c94", "orange1", "cadetblue3"
+
+ "#F28E2B",  "#9C755F",  "#BAB0AC", "#79706E", "#B07AA1", "#4E79A7", "#DAA51B", "#EDC949","#59A14F"
+
+DF_low_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+
+ggplot(DF_low_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+DF_moderate_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+
+ggplot(DF_moderate_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_High_part<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+
+ggplot(DF_High_part, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+
+DF_unburn_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+
+ggplot(DF_unburn_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_low_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+
+ggplot(DF_low_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+DF_moderate_filt<-subset(summary.filt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+
+ggplot(DF_moderate_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+DF_High_filt<-subset(summary.part, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+
+ggplot(DF_High_filt, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#d55e00", "#cc79a7", "#0072b2", "#dbb40d", "#83aa8b","gray"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+
+#spectra stacked
+spectra <- read.csv("~/Library/CloudStorage/OneDrive-SharedLibraries-PNNL/RC-3, River Corridor SFA - Presentations/ESA_2023/Morgan/spectra.csv")
+#spectra<-melt(spectra, id=c("energy"))
+
+#filt<-subset(spectra, variable=="P_BSLE_0013_filt07_sample" | variable=="P_BSLE_0002_filt07_sample" | variable=="P_BSLE_0050_filt07_sample" | variable=="P_BSLE_0007_filt07_sample")
+
+#part<-subset(spectra, variable=="P_BSLE_0013_part_sample" | variable=="P_BSLE_0002_part_sample" | variable=="P_BSLE_0050_part_sample" | variable=="P_BSLE_0007_part_sample")
+
+#DFL.sample.xas.spectra.gradient<-ggplot(DFL, aes(x=energy, y=value))+geom_line()+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+facet_grid(variable~.)+theme(text = element_text(size = 15))+xlim(2140,2200)
+
+filt<-spectra[ -c(6:9)]
+filt$P_BSLE_0007_filt07_sample<-filt$P_BSLE_0007_filt07_sample+7
+filt$P_BSLE_0002_filt07_sample<-filt$P_BSLE_0002_filt07_sample+14
+filt$P_BSLE_0050_filt07_sample<-filt$P_BSLE_0050_filt07_sample+21
+filt<-melt(filt, id=c("energy"))
+
+ggplot(filt, aes(x=energy, y=value))+geom_line(aes(color = variable), show.legend = FALSE)+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+theme(text = element_text(size = 15))+xlim(2140,2200)+scale_color_manual(values=c('Black','Black', 'Black', 'Black'))
+
+
+
+
+part<-spectra[ -c(2:5)]
+part$P_BSLE_0010_part_sample<-part$P_BSLE_0010_part_sample+7
+part$P_BSLE_0002_part_sample<-part$P_BSLE_0002_part_sample+14
+part$P_BSLE_0050_part_sample<-part$P_BSLE_0050_part_sample+21
+part<-melt(part, id=c("energy"))
+
+ggplot(part, aes(x=energy, y=value))+geom_line(aes(color = variable), show.legend = FALSE)+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+theme(text = element_text(size = 15))+xlim(2140,2200)+scale_color_manual(values=c('Black','Black', 'Black', 'Black'))
+
+
+
+
+
+```
+
+
+
+Solid XANES; open air
+```{r}
+Grouped_solid_LCF_R <- read.csv("~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P XAS/Processed_final/BSLE_Solids_Final_Fits/Grouped_solid_LCF_R.csv")
+
+data<-Grouped_solid_LCF_R %>% left_join(BSLE_solid_metadata_subset)
+
+#removing some columns (where I added Po into the metal association but this gets weird b/c of lecithin)
+data<-data[ -c(9:11, 13:19)]
+#might want to add Pi column back in to compare Pi determined by NMR and XANES
+
+data<-melt(data, id=c("Parent_ID", "Sample_ID", "Burn_Severity", "Burn_treatment", "Feedstock_Species", "Feedstock", "Land_Coverage_Category", "Feedstock_Status", "Moisture", "Char_Name", "Max_temp_C", "Burn_duration_sec"))
+
+summary.xanes.solid<-data %>%
+  group_by(variable, Burn_Severity, Feedstock) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+
+write.csv(summary.xanes.solid, file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P XAS/Processed_final/summary.xanes.solid.csv")
+
+
+#summarySE(data, "value", c("variable", "Burn_Severity", "Phase"))
+
+
+ggplot(data, aes(x=Burn_Severity, y=value, fill=Feedstock))+geom_boxplot()+facet_grid(variable~Feedstock)+theme_classic()+ xlab("Burn Severity")+ ylab("Relative Percent")+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d"))+ggtitle("P XANES: BSLE Solids")
+
+ggplot(data, aes(fill=variable, y=value, x=Burn_Severity)) + 
+    geom_bar(position="fill", stat="identity")+theme_classic()+facet_grid(.~Feedstock)+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3", "brown3", "tomato4"))+ggtitle("P XANES: BSLE Solids")
+
+ggplot(data, aes(fill=variable, y=value, x=Burn_Severity, color=variable)) + geom_point()+theme_classic()+facet_grid(variable~Feedstock)+scale_color_manual(values=c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3", "brown3", "tomato4"))+ggtitle("P XANES: BSLE Solids")
+
+dataset<-subset(data, variable=="Po" | variable=="Pi_Ca" | variable=="Pi_K" | variable=="Pi_Mg")
+
+ggplot(dataset, aes(x=Burn_Severity, y=value, fill=Feedstock))+geom_boxplot()+facet_grid(variable~Feedstock)+theme_classic()+ xlab("Burn Severity")+ ylab("Relative Percent")+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d"))+ggtitle("P XANES: BSLE Solids")+theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+
+#trying pie chart instead
+DFL.raw<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Live" & Burn_Severity=="Raw")
+#DFL.raw<-subset(DFL.raw, variable!="Mg_Total" & variable!= "Na_Total")
+DFL.raw<-ggplot(DFL.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.raw.pdf", width = 10, height = 3.5) 
+print(DFL.raw)
+dev.off()
+
+DFL.low<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Live" & Burn_Severity=="Low")
+DFL.low<-ggplot(DFL.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.low.pdf", width = 10, height = 3.5) 
+print(DFL.low)
+dev.off()
+
+DFL.mod<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Live" & Burn_Severity=="Moderate")
+DFL.mod<-ggplot(DFL.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.mod.pdf", width = 10, height = 3.5) 
+print(DFL.mod)
+dev.off()
+
+DFL.high<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Live" & Burn_Severity=="High")
+DFL.high<-ggplot(DFL.high, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.high.pdf", width = 10, height = 3.5) 
+print(DFL.high)
+dev.off()
+
+
+DFD.raw<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Raw")
+#DFD.raw<-subset(DFD.raw, variable!="Mg_Total" & variable!= "Na_Total")
+DFD.raw<-ggplot(DFD.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "gray46","#346648", "#83aa8b", "purple4", "plum3", "#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.raw.pdf", width = 10, height = 3.5) 
+print(DFD.raw)
+dev.off()
+
+DFD.low<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Low")
+DFD.low<-ggplot(DFD.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "gray46","#346648", "#83aa8b", "purple4", "plum3", "#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.low.pdf", width = 10, height = 3.5) 
+print(DFD.low)
+dev.off()
+
+DFD.mod<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Moderate")
+DFD.mod<-ggplot(DFD.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "gray46","#346648", "#83aa8b", "purple4", "plum3", "#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.mod.pdf", width = 10, height = 3.5) 
+print(DFD.mod)
+dev.off()
+
+DFD.high<-subset(summary.xanes.solid, Feedstock=="Douglas-fir Litter" & Burn_Severity=="High")
+DFD.high<-ggplot(DFD.high, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "gray46","#346648", "#83aa8b", "purple4", "plum3", "#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.high.pdf", width = 10, height = 3.5) 
+print(DFD.high)
+dev.off()
+
+
+
+SB.raw<-subset(summary.xanes.solid, Feedstock=="Big Sagebrush" & Burn_Severity=="Raw")
+SB.raw<-ggplot(SB.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.raw.pdf", width = 10, height = 3.5)
+print(SB.raw)
+dev.off()
+
+SB.low<-subset(summary.xanes.solid, Feedstock=="Big Sagebrush" & Burn_Severity=="Low")
+SB.low<-ggplot(SB.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.low.pdf", width = 10, height = 3.5)
+print(SB.low)
+dev.off()
+
+SB.mod<-subset(summary.xanes.solid, Feedstock=="Big Sagebrush" & Burn_Severity=="Moderate")
+SB.mod<-ggplot(SB.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("black", "#346648", "#83aa8b", "lightsalmon3", "brown3", "tomato4","#dbb40d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+theme(legend.title= element_blank())
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.mod.pdf", width = 10, height = 3.5)
+print(SB.mod)
+dev.off()
+
+#plot spectra of samples
+BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22 <- read.csv("~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P XAS/Processed_final/BSLE_Solids_Final_Fits/BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22.csv")
+
+
+DFL<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(25, 20, 19, 13, 1)]
+DFL<-melt(DFL, id=c("energy"))
+
+DFL.sample.xas.spectra.gradient<-ggplot(DFL, aes(x=energy, y=value))+geom_line()+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+facet_grid(variable~.)+theme(text = element_text(size = 15))+xlim(2140,2200)
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.sample.xas.spectra.gradient.pdf", width = 3.5, height = 10) 
+print(DFL.sample.xas.spectra.gradient)
+dev.off()
+
+#try to stack them differently
+DFL<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(25, 20, 19, 13, 1)]
+DFL$P_BSLE_0073_solidchar_036_fl_4s_avg<-DFL$P_BSLE_0073_solidchar_036_fl_4s_avg+9
+DFL$P_BSLE_0052_solidchar_035_fl_6sc_avg<-DFL$P_BSLE_0052_solidchar_035_fl_6sc_avg+6
+DFL$P_BSLE_0051_solidchar_034_fl_6s_avg<-DFL$P_BSLE_0051_solidchar_034_fl_6s_avg+3
+DFL<-melt(DFL, id=c("energy"))
+
+DFL.sample.xas.spectra.gradient<-ggplot(DFL, aes(x=energy, y=value))+geom_line(aes(color = variable), show.legend = FALSE)+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+theme(text = element_text(size = 15))+xlim(2140,2200)+scale_color_manual(values=c('Black','Black', 'Black', 'Black'))
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.sample.xas.spectra.gradient.pdf", width = 3.5, height = 7) 
+print(DFL.sample.xas.spectra.gradient)
+dev.off()
+
+DFD<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(18, 3, 8, 14, 1)]
+DFD<-melt(DFD, id=c("energy"))
+
+DFD.sample.xas.spectra.gradient<-ggplot(DFD, aes(x=energy, y=value))+geom_line()+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+facet_grid(variable~.)+theme(text = element_text(size = 15))+xlim(2140,2200)
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.sample.xas.spectra.gradient.pdf", width = 3.5, height = 10) 
+print(DFD.sample.xas.spectra.gradient)
+dev.off()
+
+#stack differently
+DFD<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(21, 26, 8, 14, 1)]
+DFD$P_BSLE_0067_solidchar_017_fl_4s_avg<-DFD$P_BSLE_0067_solidchar_017_fl_4s_avg+9
+DFD$P_BSLE_58_solid_8s_fl_avg.xdi<-DFD$P_BSLE_58_solid_8s_fl_avg.xdi+6
+DFD$P_BSLE_0007_solidchar_042<-DFD$P_BSLE_0007_solidchar_042+3
+DFD<-melt(DFD, id=c("energy"))
+
+DFD.sample.xas.spectra.gradient<-ggplot(DFD, aes(x=energy, y=value))+geom_line(aes(color = variable), show.legend = FALSE)+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+theme(text = element_text(size = 15))+xlim(2140,2200)+scale_color_manual(values=c('Black','Black', 'Black', 'Black'))
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.sample.xas.spectra.gradient.pdf", width = 3.5, height = 7) 
+print(DFD.sample.xas.spectra.gradient)
+dev.off()
+
+
+SB<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(22, 12, 15, 1)]
+SB<-melt(SB, id=c("energy"))
+
+SB.sample.xas.spectra.gradient<-ggplot(SB, aes(x=energy, y=value))+geom_line()+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+facet_grid(variable~.)+theme(text = element_text(size = 15))+xlim(2140,2200)
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.sample.xas.spectra.gradient.pdf", width = 3.5, height = 10) 
+print(SB.sample.xas.spectra.gradient)
+dev.off()
+
+#stack differently
+SB<-BSLE_solid_sample_spectra_normalizedforfinalLCF_12.1.22[ c(24, 12, 15, 1)]
+SB$P_BSLE_0011_solidchar_023_fl_8s_avgblank<-SB$P_BSLE_0011_solidchar_023_fl_8s_avg+9
+SB$P_BSLE_0072_solidchar_022_fl_4s_avg<-SB$P_BSLE_0072_solidchar_022_fl_4s_avg+6
+SB$P_BSLE_0011_solidchar_023_fl_8s_avg<-SB$P_BSLE_0011_solidchar_023_fl_8s_avg+3
+SB<-melt(SB, id=c("energy"))
+
+SB.sample.xas.spectra.gradient<-ggplot(SB, aes(x=energy, y=value))+geom_line(aes(color = variable), show.legend = FALSE)+theme_classic()+ylab("Noramlized Absorption (arb. units)")+ xlab("Energy (eV)")+theme(text = element_text(size = 15))+xlim(2140,2200)+scale_color_manual(values=c('Black','Black', 'Black', 'White'))
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.sample.xas.spectra.gradient.pdf", width = 3.5, height = 7) 
+print(SB.sample.xas.spectra.gradient)
+dev.off()
+
+```
+
+
+BSLE Solid NMR
+```{r}
+BSLE_NMR_Solid_Deg_Corr_for_R <- read.csv("~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P NMR/Processed_Final/BSLE_NMR_Solid_Deg_Corr_for_R.csv")
+
+data<-BSLE_NMR_Solid_Deg_Corr_for_R %>% left_join(BSLE_solid_metadata_subset)
+
+data<-melt(data, id=c("Parent_ID", "Burn_Severity", "Burn_treatment", "Feedstock_Species", "Feedstock", "Land_Coverage_Category", "Feedstock_Status", "Moisture", "Char_Name", "Max_temp_C", "Burn_duration_sec"))
+
+summary.nmr.solid.deg.corr<-data %>%
+  group_by(variable, Burn_Severity, Feedstock) %>%
+  summarise(
+    n = n(), mean = mean(value), sd=sd(value)
+  )
+
+write.csv(summary.nmr.solid.deg.corr, file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/P NMR/Processed_Final/summary.nmr.solid.deg.corr.csv")
+
+summary.nmr.solid.deg.corr$variable=factor(summary.nmr.solid.deg.corr$variable, levels= c("Ortho", "Pyro", "Mono", "Di"))
+
+ggplot(data, aes(fill=variable, y=value, x=Burn_Severity)) + 
+    geom_bar(position="fill", stat="identity")+theme_classic()+facet_grid(.~Feedstock)+scale_fill_manual(values=c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3", "brown3", "tomato4"))+ggtitle("P NMR: BSLE Solids")
+
+DFL.raw<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Live" & Burn_Severity=="Raw")
+DFL.raw.nmr<-ggplot(DFL.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.raw.nmr.pdf", width = 10, height = 3.5) 
+print(DFL.raw.nmr)
+dev.off()
+
+DFL.low<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Live" & Burn_Severity=="Low")
+DFL.low.nmr<-ggplot(DFL.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.low.nmr.pdf", width = 10, height = 3.5) 
+print(DFL.low.nmr)
+dev.off()
+
+DFL.mod<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Live" & Burn_Severity=="Moderate")
+DFL.mod.nmr<-ggplot(DFL.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.mod.nmr.pdf", width = 10, height = 3.5) 
+print(DFL.mod.nmr)
+dev.off()
+
+DFL.high<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Live" & Burn_Severity=="High")
+DFL.high.nmr<-ggplot(DFL.high, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFL.high.nmr.pdf", width = 10, height = 3.5) 
+print(DFL.high.nmr)
+dev.off()
+
+
+DFD.raw<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Raw")
+DFD.raw.nmr<-ggplot(DFD.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.raw.nmr.pdf", width = 10, height = 3.5) 
+print(DFD.raw.nmr)
+dev.off()
+
+DFD.low<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Low")
+DFD.low.nmr<-ggplot(DFD.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.low.nmr.pdf", width = 10, height = 3.5) 
+print(DFD.low.nmr)
+dev.off()
+
+DFD.mod<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Litter" & Burn_Severity=="Moderate")
+DFD.mod.nmr<-ggplot(DFD.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.mod.nmr.pdf", width = 10, height = 3.5) 
+print(DFD.mod.nmr)
+dev.off()
+
+DFD.high<-subset(summary.nmr.solid.deg.corr, Feedstock=="Douglas-fir Litter" & Burn_Severity=="High")
+DFD.high.nmr<-ggplot(DFD.high, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/DFD.high.nmr.pdf", width = 10, height = 3.5) 
+print(DFD.high.nmr)
+dev.off()
+
+
+SB.raw<-subset(summary.nmr.solid.deg.corr, Feedstock=="Big Sagebrush" & Burn_Severity=="Raw")
+SB.raw.nmr<-ggplot(SB.raw, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.raw.nmr.pdf", width = 10, height = 3.5) 
+print(SB.raw.nmr)
+dev.off()
+
+SB.low<-subset(summary.nmr.solid.deg.corr, Feedstock=="Big Sagebrush" & Burn_Severity=="Low")
+SB.low.nmr<-ggplot(SB.low, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.low.nmr.pdf", width = 10, height = 3.5) 
+print(SB.low.nmr)
+dev.off()
+
+SB.mod<-subset(summary.nmr.solid.deg.corr, Feedstock=="Big Sagebrush" & Burn_Severity=="Moderate")
+SB.mod.nmr<-ggplot(SB.mod, aes(x = "", y = mean, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#346648", "#83aa8b", "#dbb40d", "lightgoldenrod", "lightsalmon3"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+
+pdf(file = "~/PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/P_all data streams/R_Code_AGU2022/SB.mod.nmr.pdf", width = 10, height = 3.5) 
+print(SB.mod.nmr)
+dev.off()
+
+
+
+
+```

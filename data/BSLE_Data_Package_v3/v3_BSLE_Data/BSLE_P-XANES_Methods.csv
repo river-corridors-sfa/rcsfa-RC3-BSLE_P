@@ -1,0 +1,34 @@
+﻿#Columns,4,,,
+#Header_Rows,12,,,
+Field_Name,Sample_Name,Material,P-XANES,Methods_Deviation
+Unit,N/A,N/A,N/A,N/A
+Unit_Basis,N/A,N/A,as_absorption,N/A
+MethodID_Analysis,N/A,N/A,PXANES_T_AN_000,N/A
+MethodID_Inspection,N/A,N/A,PXANES_T_IN_000,N/A
+MethodID_Storage,N/A,N/A,PXANES_T_ST_000,N/A
+MethodID_Preservation,N/A,N/A,PXANES_T_PRES_000,N/A
+MethodID_Preparation,N/A,N/A,PXANES_T_PREP_000,N/A
+MethodID_DataProcessing,N/A,N/A,PXANES_T_DP_000,N/A
+Analysis_DetectionLimit,-9999,-9999,-9999,N/A
+Analysis_Precision,-9999,-9999,-9999,N/A
+Data_Status,N/A,N/A,ready_to_use,N/A
+#Start_Data,BSLE_0001-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0002-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0007-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0008-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0009-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0010-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0011-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0012-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0013-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0014-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0050-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0051-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0052-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0058-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0067-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0068-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0071-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0072-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0073-solid,Organic Material,See_P-XANES_Folder,N/A
+#End_Data,,,,

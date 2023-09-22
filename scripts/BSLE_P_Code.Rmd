@@ -10,6 +10,8 @@ rm(list=ls(all=T))
 
 ```
 
+
+
 ## Set working directory and load libraries
 ```{r}
 #set working directory and load data packages
@@ -33,7 +35,7 @@ library(lmerTest)
 library(car)
 library(emmeans)
 ```
-
+```{r}
 #import metadata
 metadata <- read.csv("~/Library/CloudStorage/OneDrive-SharedLibraries-PNNL/RC-3, River Corridor SFA - Burn Severity Experiments/Burn Severity Experiment/Data/BSLE_Data_v1/BSLE_Metadata_and_Protocols_v1/BSLE_Burn_and_Laboratory_Metadata.csv")
 
@@ -130,6 +132,11 @@ ggqqplot(residuals(model))
 shapiro_test(residuals(model)) #sig = bad 
 #check homogeneity of variance assumption 
 MBD %>% levene_test(log(P.percentofsolid) ~ Burn_Severity*Land_Coverage_Category) #not sig = good
+#leveneTest(residuals(model) ~ MBD$Burn_Severity*Land_Coverage_Category)
+
+plotNormalHistogram(residuals(glm.nh4.flux.2))
+qqnorm(residuals(glm.nh4.flux.2))
+qqline(residuals(glm.nh4.flux.2), col="blue")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
