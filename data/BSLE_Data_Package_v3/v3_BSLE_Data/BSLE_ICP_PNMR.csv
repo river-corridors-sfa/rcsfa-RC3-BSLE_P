@@ -1,4 +1,4 @@
-#Columns,19,,,,,,,,,,,,,,,,,,
+﻿#Columns,19,,,,,,,,,,,,,,,,,,
 #Header_Rows,12,,,,,,,,,,,,,,,,,,
 Field_Name,Sample_Name,Material,Extracation_Mass_g,Extraction_Volume_mL,Total_Extractable_Ca_mg_per_L,Total_Extractable_Mg_mg_per_L,Total_Extractable_P_mg_per_L,Total_Extractable_K_mg_per_L,Total_Extractable_S_mg_per_L,Total_Extractable_Al_mg_per_L,Total_Extractable_Fe_mg_per_L,Total_Extractable_Ca_mg_per_kg,Total_Extractable_Mg_mg_per_kg,Total_Extractable_P_mg_per_kg,Total_Extractable_K_mg_per_kg,Total_Extractable_S_mg_per_kg,Total_Extractable_Al_mg_per_kg,Total_Extractable_Fe_mg_per_kg,Methods_Deviation
 Unit,N/A,N/A,grams,milliliters,milligrams_per_liter,milligrams_per_liter,milligrams_per_liter,milligrams_per_liter,milligrams_per_liter,milligrams_per_liter,milligrams_per_liter,milligrams_per_kilogram,milligrams_per_kilogram,milligrams_per_kilogram,milligrams_per_kilogram,milligrams_per_kilogram,milligrams_per_kilogram,milligrams_per_kilogram,N/A

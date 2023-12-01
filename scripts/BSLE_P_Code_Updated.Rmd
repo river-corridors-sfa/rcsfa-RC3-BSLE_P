@@ -4,7 +4,8 @@ author: "Morgan Barnes"
 date: "'2023-08-18'r Sys.Date()'"
 output: html_document
 ---
-
+##This is the code for figures and statistics from Barnes et al. (2024): phosphorus composition along a burn severity gradient
+##Contact: Morgan E Barnes morgan.barnes@pnnl.gov
 ##Make your environemnt
 
 #### Set Up
@@ -47,9 +48,9 @@ c) Molybdate reactive P of leachate filtered fraction
 d) XANES of solids
 e) NMR of solids
 
-2) Chemistry data that needs post-data package processing:
-a) XANES of sollids
-b) ENMR of solids
+2) Chemistry data that needs post-data package processing after download from BSLE Data Package v3; this was done and provided within the BSLE P Manuscript Data Package:
+a) XANES of solids (spectra of samples and reference compounds and linear combination fits)
+b) NMR of solids (deconvolution)
 
 
 #### Download the BSLE Data Package
@@ -58,7 +59,8 @@ Until we can get the API to work, do this manually and store on your local. I re
 `#data folder` 
 `data/`
 
-BSLE data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
+BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
+BSLE P manuscript data package URL: INSERT HERE!!! fix
 
 Bring in the data package data:
 ```{r bsle v3 data package}
@@ -74,19 +76,24 @@ Meta <- read_csv("../data/BSLE_Data_Package_v3/v1_BSLE_Metadata_and_Protocols/BS
 Meta<-Meta[ c(2,3,5,8,21,25,26)]
 Meta$Burn_Severity=factor(Meta$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
 
-#chemical data from data package
+#chemical data from BSLE v3 data package
 ICP_Solid <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP_Solid.csv")
 ICP_Leachate <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP.csv")
 MBD <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_MBD.csv")
 ICP_PNMR <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_ICP_PNMR.csv")
 npoctdn <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/v2_BSLE_NPOC_TN.csv")
 SolidCN <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_CN.csv")
+pH <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_pH.csv")
+NMR_spectra <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_31P-NMR.csv")
 
-#chemical data processed with additional steps after data package
-NMR <- read.csv("../data/NMR_Solid_Leachate_All_Use.csv")
+
+#chemical data from BSLE P manuscript data package
+NMR <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Deconvolutions.csv") %>%
+  filter(Degradation_Corrected == 'Yes')
+XANES <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/P-XANES_LCF.csv")  
+XANES_spectra <- read_csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/xanes_example_spectra.csv") #this file was generated using XANES_Spectra_Merging script 
 
 ```
-
 
 Clean up data functions:
 ```{r functions for cleaning}
@@ -107,6 +114,15 @@ noreporting_format_cleaning <- function(dataframe){
 #subset_npoctdn <- npoctdn_clean %>% filter(str_detect(NPOC_mg_C_per_L, "Above") | str_detect(TN_mg_N_per_L, "Above"))
 #write.csv(subset_npoctdn, file = "/Users/barn772/OneDrive - PNNL/Desktop/subset_npoctdn.csv", row.names=FALSE)
 
+pH_clean <- essdive_template_cleaning(pH)  %>%
+  dplyr::rename(Sample_ID = Sample_Name,
+                pH = '00403_pH') %>%
+   mutate_at(c(3), as.numeric) %>%
+  separate(col=Sample_ID, into = c("Sample_ID", "FilterSize"), sep="-")  %>%
+  filter(grepl('unfilt', FilterSize)) %>%
+  select(Sample_ID, pH)
+
+#fix
 #wrote code so -9999 is NA, below LOD is NA, and if above or below standard curve then I pull out those values
 #these data are NOT correct because values are not dilution corrected
 #change this to 0.7 later
@@ -138,7 +154,7 @@ npoctdn_clean <- essdive_template_cleaning(npoctdn) %>%
   mutate(NPOC_mg_C_per_L = as.numeric(NPOC_mg_C_per_L),
          TN_mg_N_per_L = as.numeric(TN_mg_N_per_L))
 
-
+#fix
 SolidCN_clean <- essdive_template_cleaning(SolidCN) %>%
   dplyr::rename(C_weight_per = `01463_C_percent`,
          N_weight_per = `01472_N_percent`,
@@ -155,8 +171,8 @@ SolidCN_clean <- essdive_template_cleaning(SolidCN) %>%
    mutate(C_weight_per = as.numeric(C_weight_per),
          N_weight_per = as.numeric(N_weight_per))
 
-#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
-ICP_Solid_clean <- essdive_template_cleaning(ICP_Solid) %>%
+#did not remove samples with deviations but did modify flags: negative values were replaced with NA, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+ICP_Solid_clean<- essdive_template_cleaning(ICP_Solid) %>%
   dplyr::rename(Solid_Ca_mg_kg = '52718_Total_Ca_mg_per_kg',
                 Solid_Mg_mg_kg = '52719_Total_Mg_mg_per_kg',
                 Solid_P_mg_kg = 'Total_P_mg_per_kg',
@@ -168,10 +184,12 @@ ICP_Solid_clean <- essdive_template_cleaning(ICP_Solid) %>%
                 Parent_ID = 'Sample_Name') %>%
   mutate(Solid_Na_mg_kg = case_when(
                 Solid_Na_mg_kg == -9999 ~ NA,
-                str_detect(Solid_Na_mg_kg, "negative") ~ '0', 
-                str_detect(Solid_Na_mg_kg, "LOD") ~ NA, 
-                str_detect(Solid_Na_mg_kg, "TotNa_") ~ 
-                str_extract(Solid_Na_mg_kg, "(\\d+\\.\\d+)"),
+                str_detect(Solid_Na_mg_kg, "Negative_Value") ~ NA, 
+                str_detect(Solid_Na_mg_kg, "Below_213.43_LOD") ~ NA, 
+                str_detect(Solid_Na_mg_kg, "TotNa_Below") ~ 
+                str_extract(Solid_Na_mg_kg, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
+                str_detect(Solid_Na_mg_kg, "TotNa_Above") ~ 
+                str_extract(Solid_Na_mg_kg, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
                 TRUE ~ Solid_Na_mg_kg)) %>%
    mutate_at(c(4:11), as.numeric) %>%
   separate(col=Parent_ID, into = c("Parent_ID", "FilterSize"), sep="-")  %>%
@@ -179,7 +197,7 @@ ICP_Solid_clean <- essdive_template_cleaning(ICP_Solid) %>%
   select(Parent_ID, Solid_Ca_mg_kg,  Solid_Mg_mg_kg, Solid_P_mg_kg, Solid_K_mg_kg, Solid_Na_mg_kg, Solid_S_mg_kg, Solid_Al_mg_kg, Solid_Fe_mg_kg)
 
 
-#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+#did not remove samples with deviations but did modify flags: negative values were replaced with NA, below LOD were replaced with NA, and above/below standard curve were replaced with the value
 ICP_Leachate_clean <- essdive_template_cleaning(ICP_Leachate) %>%
   dplyr::rename(Leachate_Ca_mg_L = 'Total_Ca_mg_per_L',
                 Leachate_Mg_mg_L = 'Total_Mg_mg_per_L',
@@ -192,24 +210,30 @@ ICP_Leachate_clean <- essdive_template_cleaning(ICP_Leachate) %>%
                 Sample_ID = 'Sample_Name') %>%
   mutate(Leachate_Na_mg_L = case_when(
                 Leachate_Na_mg_L == -9999 ~ NA,
-                str_detect(Leachate_Na_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Na_mg_L, "Negative") ~ NA, 
                 str_detect(Leachate_Na_mg_L, "LOD") ~ NA, 
-                str_detect(Leachate_Na_mg_L, "TotNa_") ~ 
-                str_extract(Leachate_Na_mg_L, "(\\d+\\.\\d+)"),
+                str_detect(Leachate_Na_mg_L, "TotNa_Below") ~ 
+                str_extract(Leachate_Na_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
+                str_detect(Leachate_Na_mg_L, "TotNa_Above") ~ 
+                str_extract(Leachate_Na_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
                 TRUE ~ Leachate_Na_mg_L)) %>%
   mutate(Leachate_Al_mg_L = case_when(
                 Leachate_Na_mg_L == -9999 ~ NA,
-                str_detect(Leachate_Al_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Al_mg_L, "Negative") ~ NA, 
                 str_detect(Leachate_Al_mg_L, "LOD") ~ NA, 
-                str_detect(Leachate_Al_mg_L, "TotNa_") ~ 
-                str_extract(Leachate_Al_mg_L, "(\\d+\\.\\d+)"),
+                str_detect(Leachate_Al_mg_L, "TotAl_Below") ~ 
+                str_extract(Leachate_Al_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
+                str_detect(Leachate_Al_mg_L, "TotAl_Above") ~ 
+                str_extract(Leachate_Al_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
                 TRUE ~ Leachate_Al_mg_L)) %>%
   mutate(Leachate_Fe_mg_L = case_when(
                 Leachate_Fe_mg_L == -9999 ~ NA,
-                str_detect(Leachate_Fe_mg_L, "negative") ~ '0', 
+                str_detect(Leachate_Fe_mg_L, "Negative") ~ NA, 
                 str_detect(Leachate_Fe_mg_L, "LOD") ~ NA, 
-                str_detect(Leachate_Fe_mg_L, "TotNa_") ~ 
-                str_extract(Leachate_Fe_mg_L, "(\\d+\\.\\d+)"),
+                str_detect(Leachate_Fe_mg_L, "TotAl_Below") ~ 
+                str_extract(Leachate_Fe_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
+                str_detect(Leachate_Fe_mg_L, "TotAl_Above") ~ 
+                str_extract(Leachate_Fe_mg_L, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
                 TRUE ~ Leachate_Fe_mg_L))  %>%
   mutate_at(c(2:9), as.numeric) %>%
   select(Sample_ID, Leachate_Ca_mg_L,  Leachate_Mg_mg_L, Leachate_P_mg_L, Leachate_K_mg_L, Leachate_Na_mg_L, Leachate_S_mg_L, Leachate_Al_mg_L, Leachate_Fe_mg_L) %>%
@@ -228,6 +252,7 @@ ICP_Leachate_Filt_clean<- ICP_Leachate_clean %>%
                 Leachate_Fe_mg_L_filt0.7 = 'Leachate_Fe_mg_L') %>%
   select(Sample_ID, Leachate_Ca_mg_L_filt0.7,  Leachate_Mg_mg_L_filt0.7, Leachate_P_mg_L_filt0.7, Leachate_K_mg_L_filt0.7, Leachate_Na_mg_L_filt0.7, Leachate_S_mg_L_filt0.7, Leachate_Al_mg_L_filt0.7, Leachate_Fe_mg_L_filt0.7)
 
+
 ICP_Leachate_Unfilt_clean<- ICP_Leachate_clean %>%
                 filter(str_detect(FilterSize, "unfilt")) %>%
   dplyr::rename(Leachate_Ca_mg_L_unfilt = 'Leachate_Ca_mg_L',
@@ -242,42 +267,65 @@ ICP_Leachate_Unfilt_clean<- ICP_Leachate_clean %>%
 
 
 #did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value (value is corrected for dilution and subtracted by unreactive P to correct for color interference)
+#only used concentrations above the high standard if within 15% of it
 MBD_Leachate_clean <- essdive_template_cleaning(MBD) %>%
   dplyr::rename(Sample_ID = 'Sample_Name',
                 MBD_P_mg_per_L_filt0.7 = 'MBD_P_mg_per_L') %>%
   mutate(MBD_P_mg_per_L_filt0.7 = case_when(
                 MBD_P_mg_per_L_filt0.7 == -9999 ~ NA,
-                str_detect(MBD_P_mg_per_L_filt0.7, "negative") ~ '0', 
+                str_detect(MBD_P_mg_per_L_filt0.7, "negative") ~ NA, 
                 str_detect(MBD_P_mg_per_L_filt0.7, "LOD") ~ NA, 
-                str_detect(MBD_P_mg_per_L_filt0.7, "Range") ~ 
-                str_extract(MBD_P_mg_per_L_filt0.7, "(\\d+\\.\\d+)"),
+                str_detect(Sample_ID, "50A") ~ NA, #hihger than 15% of high standard
+                str_detect(MBD_P_mg_per_L_filt0.7, "MBD_Below") ~ 
+                str_extract(MBD_P_mg_per_L_filt0.7, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
+                str_detect(MBD_P_mg_per_L_filt0.7, "MBD_Above") ~ 
+                str_extract(MBD_P_mg_per_L_filt0.7, "\\d+\\.?\\d*(?=_ppm_Final_Corrected)"),
                 TRUE ~ MBD_P_mg_per_L_filt0.7)) %>%
   mutate_at(c(2), as.numeric) %>%
   filter(grepl('filt', Sample_ID)) %>%
   separate(col=Sample_ID, into = c("Sample_ID", "FilterSize"), sep="-") %>%
-  select(Sample_ID, MBD_P_mg_per_L_filt0.7) 
+  select(Sample_ID, MBD_P_mg_per_L_filt0.7) %>%
+  filter(Sample_ID != "BSLE_0073C") #remove 73C because below limit of quantification
 
-
-#did not remove samples with deviations but did modify flags: negative values were replaced with zero, below LOD were replaced with NA, and above/below standard curve were replaced with the value
+#didn't need to modify b/c no text strings
 ICP_PNMR_clean <- essdive_template_cleaning(ICP_PNMR) %>%
   dplyr::rename(Parent_ID = 'Sample_Name') %>%
   mutate_at(c(2:8), as.numeric) %>%
   filter(grepl('solid', Parent_ID)) %>%
   separate(col=Parent_ID, into = c("Parent_ID", "FilterSize"), sep="-") %>%
   select(Parent_ID, Total_Extractable_Ca_mg_per_kg,  Total_Extractable_Mg_mg_per_kg, Total_Extractable_P_mg_per_kg, Total_Extractable_K_mg_per_kg,  Total_Extractable_S_mg_per_kg, Total_Extractable_Al_mg_per_kg, Total_Extractable_Fe_mg_per_kg) 
+
+XANES_clean <- XANES %>%
+  select(-where(~all(is.na(.)))) %>%
+  mutate(XANES_Po = rowSums(select(., contains("Po")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi = rowSums(select(., contains("Pi")), na.rm = TRUE)) %>%
+  mutate(XANES_Fe = rowSums(select(., contains("Fe")), na.rm = TRUE)) %>%
+  mutate(XANES_Na = rowSums(select(., contains("Pi_Na") | contains("Po_Na")), na.rm = TRUE)) %>%
+  mutate(XANES_Ca = rowSums(select(., contains("Ca") | contains("Apatite")), na.rm = TRUE)) %>%
+  mutate(XANES_Al = rowSums(select(., contains("Al")), na.rm = TRUE)) %>%
+  mutate(XANES_Mg = rowSums(select(., contains("Mg") | contains("NH4_Mg")), na.rm = TRUE)) %>%
+  mutate(XANES_K = rowSums(select(., contains("K")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_Fe = rowSums(select(., contains("Pi_Fe")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_Na = rowSums(select(., contains("Pi_Na")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_Ca = rowSums(select(., contains("Pi_Ca") | contains("Apatite")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_Al = rowSums(select(., contains("Pi_Al")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_Mg = rowSums(select(., contains("Pi_Mg") | contains("NH4_Mg")), na.rm = TRUE)) %>%
+  mutate(XANES_Pi_K = rowSums(select(., contains("Pi_K")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_Fe = rowSums(select(., contains("Po_Fe")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_Na = rowSums(select(., contains("Po_Na")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_Ca = rowSums(select(., contains("Po_Ca")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_Al = rowSums(select(., contains("Po_Al")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_Mg = rowSums(select(., contains("Po_Mg")), na.rm = TRUE)) %>%
+  mutate(XANES_Po_K = rowSums(select(., contains("Po_K")), na.rm = TRUE)) %>%
+  separate(col=Sample_Name, into = c("Parent_ID", "FilterSize"), sep="-") %>%
+  filter(str_detect(FilterSize, "solid"))
+
+NMR_clean <- NMR %>%
+  separate(col=Sample_Name, into = c("Parent_ID", "FilterSize"), sep="-") 
 ```
 
 
 ```{r combine and format data}
-#data<-SolidCN_clean %>% left_join(Meta, by = 'Parent_ID')
-#data<-ICP_Solid_clean %>% left_join(data, by = 'Parent_ID')
-#data<-ICP_PNMR_clean %>% left_join(data, by = 'Parent_ID')
-#data<-npoctdn_clean %>% left_join(data, by = 'Sample_ID')
-#data<-ICP_Leachate_Filt_clean %>% left_join(data, by = 'Sample_ID')
-#data<-ICP_Leachate_Unfilt_clean %>% left_join(data, by = 'Sample_ID')
-#data<-MBD_Leachate_clean %>% left_join(data, by = 'Sample_ID')
-
-
 data <- Meta %>%
   full_join(SolidCN_clean, by = 'Parent_ID') %>%
   full_join(ICP_Solid_clean, by = 'Parent_ID') %>%
@@ -286,13 +334,29 @@ data <- Meta %>%
   full_join(ICP_Leachate_Filt_clean, by = 'Sample_ID') %>%
   full_join(ICP_Leachate_Unfilt_clean, by = 'Sample_ID') %>%
   full_join(MBD_Leachate_clean, by = 'Sample_ID') %>%
-  mutate_at(c(6:43), as.numeric) %>%
+  full_join(pH_clean, by = 'Sample_ID') %>%
+  mutate_at(c(6:44), as.numeric) %>%
   filter(!is.na(Solid_P_mg_kg))
 
-#create a dataframe for only solids figures and stats to prevent having reps count as extra samples
+data$Burn_Severity=factor(data$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+#create a dataframe for only solids figures and stats to prevent having reps count as extra samples; add NMR data
 data_solids <- data %>%
   filter(str_detect(Sample_ID, "A")) %>%
-  select(1:24) 
+  select(1:24) %>%
+  left_join(NMR_clean) %>%
+  left_join(XANES_clean)
+
+data_solids$Burn_Severity=factor(data_solids$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+#keep XANES separate too
+XANES_clean<- Meta %>%
+  full_join(XANES_clean, by = 'Parent_ID') %>%
+  filter(str_detect(Sample_ID, "A")) %>%
+  mutate(Burn_Treatment = as.character(Burn_Treatment)) %>%
+  filter(Burn_Treatment %in% c("burn table" , "raw")) %>%
+  filter(Land_Coverage_Category %in% c("Douglas-fir forest" , "Sagebrush shrubland")) %>%
+  filter(!is.na(FilterSize))
 ```
 
 ####Additional Calcs
@@ -307,75 +371,13 @@ data_solids<-data_solids %>%
   Solid_N_mg_kg = (N_weight_per*10000))
 
 
-```
-
-
-##Figures and Stats
-
-####summary stats
-```{r solids and leachate summary}
-
-#NMR extraction efficiency
-summary_solids <- data_solids %>%
-  dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
-  dplyr::summarize(
-    Mean = mean(NMR_EE_P_perc, na.rm = TRUE),
-    Standard_Deviation = sd(NMR_EE_P_perc, na.rm = TRUE),
-    Count = n()
-  )
-
-```
-
-####Molybdate
-```{r MBD fig and stats}
-
-#convert to P relative to solid mass and water volume
+#convert to P relative to solid mass and water volume for Molybdate
 data<-data %>%
   mutate(MBD_P_mg_kgchar = MBD_P_mg_per_L_filt0.7*Leachate_vol_mL/Char_leached_g*1000/1000) 
 
-#normalize by P concentration in solid char
+#normalize by P concentration in solid char for Molybdate
 data<-data %>%
   mutate(MBD_P_percentofsolid = MBD_P_mg_kgchar/Solid_P_mg_kg*100)
-
-#MBD mg/L figure
-ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_per_L_filt0.7, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(mg~P~L^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
-
-#MBD mg/kg figure; likely use this one for publication
-MBD.BS.fig<-ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_kgchar, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
-
-cowplot::save_plot("../figures/MBD.BS.fig.pdf", MBD.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#MBD as percent of solid P concentration figure
-ggplot(data, aes(x=Burn_Severity, y=MBD_P_percentofsolid, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab("Soluble Reactive P (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
-
-#MBD mg/kg stats; likely use this one for publication
-#need to figure out how to transform the data to meet assumptions
-model<-lmer(log(MBD_P_mg_kgchar)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
-summary(model)
-vif(model)
-#check normality of residuals 
-ggqqplot(residuals(model))
-shapiro_test(residuals(model)) #sig = bad 
-#check homogeneity of variance assumption 
-data %>% levene_test(log(MBD_P_mg_kgchar) ~ Burn_Severity*Land_Coverage_Category) #sig = bad
-#leveneTest(residuals(model) ~ MBD$Burn_Severity*Land_Coverage_Category)
-#plotNormalHistogram(residuals(model))
-#qqnorm(residuals(model))
-#qqline(residuals(model), col="blue")
-
-#can't use these b/c fixed effects nor interaction aren't significant
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
-
-```
-
-
-####ICP Leachates
-```{r leachate ICP fig and stats}
 
 #calculate particulate concentrations as the difference between filtered and unfiltered
 data<-data %>%
@@ -415,9 +417,20 @@ data<-data %>%
   mutate(Leachate_Al_mg_kgchar_unfilt  = Leachate_Al_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
   mutate(Leachate_Fe_mg_kgchar_unfilt = Leachate_Fe_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000)
 
+#convert solid elemental concentrations from to g/kg
+data_solids<-data_solids %>%
+  mutate(Solid_P_g_kg = Solid_P_mg_kg/1000) %>%
+  mutate(Solid_Ca_g_kg = Solid_Ca_mg_kg/1000) %>%
+  mutate(Solid_Fe_g_kg = Solid_Fe_mg_kg/1000) %>%
+  mutate(Solid_Al_g_kg = Solid_Al_mg_kg/1000) %>%
+  mutate(Solid_K_g_kg = Solid_K_mg_kg/1000) %>%
+  mutate(Solid_Mg_g_kg = Solid_Mg_mg_kg/1000) %>%
+  mutate(Solid_Na_g_kg = Solid_Na_mg_kg/1000) %>%
+  mutate(Solid_S_g_kg = Solid_S_mg_kg/1000) %>%
+  mutate(Solid_C_g_kg = C_weight_per/100*1000) %>%
+  mutate(Solid_N_g_kg = N_weight_per/100*1000)
 
-
-#normalize by P concentration in solid char
+#normalize by P concentration in solid char fix
 data<-data %>%
   mutate(Leachate_Ca_perc_solid_part = Leachate_Ca_mg_kgchar_part/Solid_P_mg_kg*100) %>%
   mutate(Leachate_Mg_perc_solid_part = Leachate_Mg_mg_kgchar_part/Solid_P_mg_kg*100) %>%
@@ -436,6 +449,199 @@ data<-data %>%
   mutate(Leachate_Al_perc_solid_filt0.7 = Leachate_Al_mg_kgchar_filt0.7/Solid_P_mg_kg*100) %>%
   mutate(Leachate_Fe_perc_solid_filt0.7 = Leachate_Fe_mg_kgchar_filt0.7/Solid_P_mg_kg*100)
 
+#molar stoichiometry of P:element in solid phase fix
+test<-data_solids %>%
+  mutate(Fe.P.MolarRatio=(Solid_Fe_mg_kg/55.845/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(K.P.MolarRatio=(Solid_K_mg_kg/39.0983/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(Na.P.MolarRatio=(Solid_Na_mg_kg/22.989/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(Al.P.MolarRatio=(Solid_Al_mg_kg/26.982/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(Mg.P.MolarRatio=(Solid_Mg_mg_kg/24.305/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(Ca.P.MolarRatio=(Solid_Ca_mg_kg/40.078/1000)/(Solid_P_mg_kg/30.97/1000))%>%
+  mutate(S.P.MolarRatio=(Solid_S_mg_kg/32.065/1000)/(Solid_P_mg_kg/30.97/1000))
+
+
+
+#molar stoichiometry of P:element in particulate phase
+
+#molar stoichiometry of P:element in <0.7 phase
+
+
+
+#save csv of final collated data with manipulations
+write.csv(data, "../data/data.csv") #all data
+write.csv(data_solids, "../data/data_solids.csv") #solids only
+```
+
+
+##Figures and Stats
+```{r}
+#import data so you don't have to run above code
+
+data <- read_csv("../data/data.csv")
+data_solids <- read_csv("../data/data_solids.csv")
+```
+
+####summary stats
+```{r solids and leachate summary}
+
+#solid elemental concentrations, NMR, and XANES summary
+summary_solids_conc <- data_solids %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
+  dplyr::summarize(
+    P_Mean = mean(Solid_P_g_kg, na.rm = TRUE),
+    P_Standard_Deviation = sd(Solid_P_g_kg, na.rm = TRUE),
+    Ca_Mean = mean(Solid_Ca_g_kg, na.rm = TRUE),
+    Ca_Standard_Deviation = sd(Solid_Ca_g_kg, na.rm = TRUE),
+    Fe_Mean = mean(Solid_Fe_g_kg, na.rm = TRUE),
+    Fe_Standard_Deviation = sd(Solid_Fe_g_kg, na.rm = TRUE),
+    Al_Mean = mean(Solid_Al_g_kg, na.rm = TRUE),
+    Al_Standard_Deviation = sd(Solid_Al_g_kg, na.rm = TRUE),
+    K_Mean = mean(Solid_K_g_kg, na.rm = TRUE),
+    K_Standard_Deviation = sd(Solid_K_g_kg, na.rm = TRUE),
+    Mg_Mean = mean(Solid_Mg_g_kg, na.rm = TRUE),
+    Mg_Standard_Deviation = sd(Solid_Mg_g_kg, na.rm = TRUE),
+    Na_Mean = mean(Solid_Na_g_kg, na.rm = TRUE),
+    Na_Standard_Deviation = sd(Solid_Na_g_kg, na.rm = TRUE),
+    S_Mean = mean(Solid_S_g_kg, na.rm = TRUE),
+    S_Standard_Deviation = sd(Solid_S_g_kg, na.rm = TRUE),
+    C_Mean = mean(Solid_C_g_kg, na.rm = TRUE),
+    C_Standard_Deviation = sd(Solid_C_g_kg, na.rm = TRUE),
+    N_Mean = mean(Solid_N_g_kg, na.rm = TRUE),
+    N_Standard_Deviation = sd(Solid_N_g_kg, na.rm = TRUE),
+    Ortho_Mean = mean(Ortho, na.rm = TRUE),
+    Ortho_Standard_Deviation = sd(Ortho, na.rm = TRUE),
+    Mono_Mean = mean(Mono, na.rm = TRUE),
+    Mono_Standard_Deviation = sd(Mono, na.rm = TRUE),
+    Di_Mean = mean(Di, na.rm = TRUE),
+    Di_Standard_Deviation = sd(Di, na.rm = TRUE),
+    Pyro_Mean = mean(Pyro, na.rm = TRUE),
+    Pyro_Standard_Deviation = sd(Pyro, na.rm = TRUE),
+    XANES_Po_Mean = mean(XANES_Po, na.rm = TRUE),
+    XANES_Po_Standard_Deviation = sd(XANES_Po, na.rm = TRUE),
+    XANES_Pi_Mean = mean(XANES_Pi, na.rm = TRUE),
+    XANES_Pi_Standard_Deviation = sd(XANES_Pi, na.rm = TRUE),
+    XANES_Fe_Mean = mean(XANES_Fe, na.rm = TRUE),
+    XANES_Fe_Standard_Deviation = sd(XANES_Fe, na.rm = TRUE),
+    XANES_Na_Mean = mean(XANES_Na, na.rm = TRUE),
+    XANES_Na_Standard_Deviation = sd(XANES_Na, na.rm = TRUE),
+    XANES_Ca_Mean = mean(XANES_Ca, na.rm = TRUE),
+    XANES_Ca_Standard_Deviation = sd(XANES_Ca, na.rm = TRUE),
+    XANES_Al_Mean = mean(XANES_Al, na.rm = TRUE),
+    XANES_Al_Standard_Deviation = sd(XANES_Al, na.rm = TRUE),
+    XANES_Mg_Mean = mean(XANES_Mg, na.rm = TRUE),
+    XANES_Mg_Standard_Deviation = sd(XANES_Mg, na.rm = TRUE),
+    XANES_K_Mean = mean(XANES_K, na.rm = TRUE),
+    XANES_K_Standard_Deviation = sd(XANES_K, na.rm = TRUE),
+    XANES_Pi_Fe_Mean = mean(XANES_Pi_Fe, na.rm = TRUE),
+    XANES_Pi_Fe_Standard_Deviation = sd(XANES_Pi_Fe, na.rm = TRUE),
+    XANES_Pi_Na_Mean = mean(XANES_Pi_Na, na.rm = TRUE),
+    XANES_Pi_Na_Standard_Deviation = sd(XANES_Pi_Na, na.rm = TRUE),
+    XANES_Pi_Ca_Mean = mean(XANES_Pi_Ca, na.rm = TRUE),
+    XANES_Pi_Ca_Standard_Deviation = sd(XANES_Pi_Ca, na.rm = TRUE),
+    XANES_Pi_Al_Mean = mean(XANES_Pi_Al, na.rm = TRUE),
+    XANES_Pi_Al_Standard_Deviation = sd(XANES_Pi_Al, na.rm = TRUE),
+    XANES_Pi_Mg_Mean = mean(XANES_Pi_Mg, na.rm = TRUE),
+    XANES_Pi_Mg_Standard_Deviation = sd(XANES_Pi_Mg, na.rm = TRUE),
+    XANES_Pi_K_Mean = mean(XANES_Pi_K, na.rm = TRUE),
+    XANES_Pi_K_Standard_Deviation = sd(XANES_Pi_K, na.rm = TRUE),
+    XANES_Po_Fe_Mean = mean(XANES_Po_Fe, na.rm = TRUE),
+    XANES_Po_Fe_Standard_Deviation = sd(XANES_Po_Fe, na.rm = TRUE),
+    XANES_Po_Na_Mean = mean(XANES_Po_Na, na.rm = TRUE),
+    XANES_Po_Na_Standard_Deviation = sd(XANES_Po_Na, na.rm = TRUE),
+    XANES_Po_Ca_Mean = mean(XANES_Po_Ca, na.rm = TRUE),
+    XANES_Po_Ca_Standard_Deviation = sd(XANES_Po_Ca, na.rm = TRUE),
+    XANES_Po_Al_Mean = mean(XANES_Po_Al, na.rm = TRUE),
+    XANES_Po_Al_Standard_Deviation = sd(XANES_Po_Al, na.rm = TRUE),
+    XANES_Po_Mg_Mean = mean(XANES_Po_Mg, na.rm = TRUE),
+    XANES_Po_Mg_Standard_Deviation = sd(XANES_Po_Mg, na.rm = TRUE),
+    XANES_Po_K_Mean = mean(XANES_Po_K, na.rm = TRUE),
+    XANES_Po_K_Standard_Deviation = sd(XANES_Po_K, na.rm = TRUE),
+    Count = n()
+  )
+
+                   
+write.csv(summary_solids_conc, "../data/summary_solids_conc.csv") #save this for a table
+
+
+#NMR extraction efficiency
+summary_solids <- data_solids %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
+  dplyr::summarize(
+    Mean = mean(NMR_EE_P_perc, na.rm = TRUE),
+    Standard_Deviation = sd(NMR_EE_P_perc, na.rm = TRUE),
+    Count = n()
+  )
+
+#leachate concentrations
+P.Conc.leach<- data %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
+  dplyr::summarize(
+    Leachate_P_mg_kgchar_part_Mean = mean(Leachate_P_mg_kgchar_part, na.rm = TRUE),
+    Leachate_P_mg_kgchar_part_Standard_Deviation = sd(Leachate_P_mg_kgchar_part, na.rm = TRUE),
+    Count = n(),
+    Leachate_P_mg_kgchar_filt0.7_Mean = mean(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_P_mg_kgchar_filt0.7_Standard_Deviation = sd(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_P_mg_kgchar_unfilt_Mean = mean(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_P_mg_kgchar_unfilt_Standard_Deviation = sd(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE)
+  )
+
+
+  
+```
+
+####Molybdate
+```{r MBD fig and stats}
+#MBD mg/L figure
+ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_per_L_filt0.7, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(mg~P~L^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+#MBD mg/kg figure; likely use this one for publication
+MBD.BS.fig<-ggplot(data, aes(x=Burn_Severity, y=MBD_P_mg_kgchar/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Soluble~Reactive~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+cowplot::save_plot("../figures/MBD.BS.fig.pdf", MBD.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#MBD as percent of solid P concentration figure
+ggplot(data, aes(x=Burn_Severity, y=MBD_P_percentofsolid, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab("Soluble Reactive P (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
+
+#note: I think would be okay with this model b/c I would only need to interpret the interaction since it is significant
+#MBD mg/kg stats; likely use this one for publication
+#need to figure out how to transform the data to meet assumptions
+model<-lmer(log(MBD_P_mg_kgchar)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data) #if want to use maximum likelihood , REML=FALSE
+model.BS<-lmer(log(MBD_P_mg_kgchar)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log(MBD_P_mg_kgchar)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log(MBD_P_mg_kgchar)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS) #not sig
+anova(model,model.LC) #sig
+anova(model,model.int) #sig
+#summary(model)
+vif(model)
+#check normality of residuals 
+ggqqplot(residuals(model))
+shapiro_test(residuals(model)) #sig = bad 
+#check homogeneity of variance assumption 
+data %>% levene_test(log(MBD_P_mg_kgchar) ~ Burn_Severity*Land_Coverage_Category) #sig = bad
+#leveneTest(residuals(model) ~ MBD$Burn_Severity*Land_Coverage_Category)
+#plotNormalHistogram(residuals(model))
+#qqnorm(residuals(model))
+#qqline(residuals(model), col="blue")
+
+#POST HOCs: land cover and interaction were significant in the main model
+#burn severity post hoc: is burn severity significant across all land covers?
+emmeans::lsmeans(model, list(pairwise~Burn_Severity), adjust="tukey") #only get results for raw-low, raw-mod, low-mod (no comparison to high)
+#land cover post hoc: is sage sig different than doug across all severities?
+emmeans::lsmeans(model, list(pairwise~Land_Coverage_Category), adjust="tukey") #don't get any results
+#interaction post hoc: Is the relationship sage has with severity different than doug?
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") #between doug and sage at unburned severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between doug and sage at low severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") #between doug and sage at mod severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey") #can't run b/c no sage high
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") #within doug how BS changes
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") #within sage how BS changes
+
+```
+
+
+####ICP Leachates
+```{r leachate ICP fig and stats}
 #convert to percent of total P in unfiltered sample
 #ICP$P.filt.percentofunfilt<-(ICP$Total_P_mg_per_L_filt/ICP$Total_P_mg_per_L_unfilt)*100
 #ICP$P.part.percentofunfilt<-(ICP$Total_P_mg_per_L_part/ICP$Total_P_mg_per_L_unfilt)*100
@@ -446,19 +652,32 @@ Leachate.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg
 cowplot::save_plot("../figures/Leachate.total.P.BS.boxplot.pdf", Leachate.total.P.BS.boxplot, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
 
 model<-lmer(log(Leachate_P_mg_kgchar_unfilt)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log(Leachate_P_mg_kgchar_unfilt)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log(Leachate_P_mg_kgchar_unfilt)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log(Leachate_P_mg_kgchar_unfilt)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS) #sig
+anova(model,model.LC) #sig
+anova(model,model.int) #sig
 summary(model)
 vif(model)
 #check normality of residuals 
 ggqqplot(residuals(model))
 shapiro_test(residuals(model)) #sig = bad 
 #check homogeneity of variance assumption 
-MBD %>% levene_test(log(P.percentofsolid) ~ Burn_Severity*Land_Coverage_Category) #not sig = good
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey")
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
+#MBD %>% levene_test(log(Leachate_P_mg_kgchar_unfilt) ~ Burn_Severity*Land_Coverage_Category)
+
+#POST HOCs: burn severity. land cover, and interaction were significant in the main model
+#burn severity post hoc: is burn severity significant across all land covers?
+emmeans::lsmeans(model, list(pairwise~Burn_Severity), adjust="tukey") #only get results for raw-low, raw-mod, low-mod (no comparison to high)
+#land cover post hoc: is sage sig different than doug across all severities?
+emmeans::lsmeans(model, list(pairwise~Land_Coverage_Category), adjust="tukey") #don't get any results
+#interaction post hoc: Is the relationship sage has with severity different than doug?
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") #between doug and sage at unburned severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between doug and sage at low severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") #between doug and sage at mod severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey") #can't run b/c no sage high
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") #within doug how BS changes
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") #within sage how BS changes
 
 Leachate.filt0.7.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg_kgchar_filt0.7, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Total~Soluble~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
 
@@ -467,6 +686,78 @@ cowplot::save_plot("../figures/Leachate.filt0.7.total.P.BS.boxplot.pdf", Leachat
 Leachate.unfilt.total.P.BS.boxplot <- ggplot(data, aes(x=Burn_Severity, y=Leachate_P_mg_kgchar_part, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Total~Particulate~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
 
 cowplot::save_plot("../figures/Leachate.unfilt.total.P.BS.boxplot.pdf", Leachate.unfilt.total.P.BS.boxplot, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+
+#stacked bar chart
+P.Conc.leach.bar <- P.Conc.leach %>%
+  mutate(sd.high=Leachate_P_mg_kgchar_unfilt_Mean+Leachate_P_mg_kgchar_unfilt_Standard_Deviation) %>%
+  mutate(sd.low=Leachate_P_mg_kgchar_unfilt_Mean-Leachate_P_mg_kgchar_unfilt_Standard_Deviation)
+
+
+P.Conc.leach_melt<-melt(P.Conc.leach.bar, id=c("Burn_Severity", "Land_Coverage_Category","sd.low", "sd.high")) %>%
+  filter(variable %in% c("Leachate_P_mg_kgchar_part_Mean" , "Leachate_P_mg_kgchar_filt0.7_Mean"))
+
+#here
+
+Leachate_stacked_bar <- ggplot(subset(P.Conc.leach_melt, variable=="Leachate_P_mg_kgchar_part_Mean" | variable=="Leachate_P_mg_kgchar_filt0.7_Mean"), aes(x = Burn_Severity, y = value, fill=variable)) + geom_bar(stat = "identity")  + theme_classic()+ylab(expression(paste(Leachate~Mean~Total~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#2274A5", "#E7DFC6"), labels = c("Particulate", "Soluble"), name = "")+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15)) + geom_errorbar(aes(ymax=sd.high, ymin=sd.low), width = 0.2, size = 1, color = "black")
+
+cowplot::save_plot("../figures/Leachate_stacked_bar.pdf", Leachate_stacked_bar, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+
+model<-lmer(log(Leachate_P_mg_kgchar_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log(Leachate_P_mg_kgchar_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log(Leachate_P_mg_kgchar_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log(Leachate_P_mg_kgchar_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS)
+anova(model,model.LC) #sig
+anova(model,model.int) #not sig but since BS also isn't sig I probably don't care that much about the LC main effect (so not being able to run the post hoc isn't an issue)
+summary(model)
+vif(model)
+#check normality of residuals 
+ggqqplot(residuals(model))
+shapiro_test(residuals(model)) #sig = bad 
+#check homogeneity of variance assumption 
+MBD %>% levene_test(log(Leachate_P_mg_kgchar_filt0.7) ~ Burn_Severity*Land_Coverage_Category) 
+#POST HOCs: land cover was the only significant main effect in the main model
+#burn severity post hoc: is burn severity significant across all land covers?
+emmeans::lsmeans(model, list(pairwise~Burn_Severity), adjust="tukey") #only get results for raw-low, raw-mod, low-mod (no comparison to high)
+#land cover post hoc: is sage sig different than doug across all severities?
+emmeans::lsmeans(model, list(pairwise~Land_Coverage_Category), adjust="tukey") #don't get any results
+#interaction post hoc: Is the relationship sage has with severity different than doug?
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") #between doug and sage at unburned severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between doug and sage at low severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") #between doug and sage at mod severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey") #can't run b/c no sage high
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") #within doug how BS changes
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") #within sage how BS changes
+
+
+model<-lmer(log(Leachate_P_mg_kgchar_part)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log(Leachate_P_mg_kgchar_part)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log(Leachate_P_mg_kgchar_part)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log(Leachate_P_mg_kgchar_part)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS) #sig
+anova(model,model.LC) #sig
+anova(model,model.int) #sig
+summary(model)
+vif(model)
+#check normality of residuals 
+ggqqplot(residuals(model))
+shapiro_test(residuals(model)) #sig = bad 
+#check homogeneity of variance assumption 
+#MBD %>% levene_test(log(Leachate_P_mg_kgchar_part) ~ Burn_Severity*Land_Coverage_Category) #not sig = good
+#POST HOCs: land cover was the only significant main effect in the main model
+#burn severity post hoc: is burn severity significant across all land covers?
+emmeans::lsmeans(model, list(pairwise~Burn_Severity), adjust="tukey") #only get results for raw-low, raw-mod, low-mod (no comparison to high)
+#land cover post hoc: is sage sig different than doug across all severities?
+emmeans::lsmeans(model, list(pairwise~Land_Coverage_Category), adjust="tukey") #don't get any results
+#interaction post hoc: Is the relationship sage has with severity different than doug?
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") #between doug and sage at unburned severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between doug and sage at low severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") #between doug and sage at mod severity
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="High"),adjust="tukey") #can't run b/c no sage high
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") #within doug how BS changes
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") #within sage how BS changes
 ```
 
 ####Solid ICP
@@ -584,7 +875,7 @@ summary(model)
 ```
 
 
-####RDAs
+####PCA & RDAs
 ```{r PCA solid bulk chem}
 #PCA of elemental concentration of the solid chars with burn severity and feedstock
 
@@ -620,15 +911,424 @@ ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_solids_co
 
 ```
 
-```{r PCA leachate bulk chem}
+```{r PCA leachate bulk chem in both fractions}
+#include pH, particulate concentrations from ICP, and filt0.7 concentrations from ICP, NPOC, TDN, MBD 
 
+#fix THIS DOESN"T WORK RIGHT NOW
+#format dataframe and then also remove NAs
+data_solids_corr <- data_solids %>%
+  rename_with(
+    ~sub("Leachate_(.*?)_mg_kg", "\\1", .),
+    starts_with("Leachate_")) %>%
+  select(Burn_Severity, Land_Coverage_Category, P, C, N, Ca, Mg, Na, Fe, Al, S, K) %>%
+  na.omit(data_solids)
 
 ```
 
+```{r PCA XANES}
+#PCAs of XANES LCF
+
+#FIX THIS DOENS'T RUN RIGHT NOW
+
+#all phases together; open air; Po individual species
+
+#format dataframe using same code as correlation and then also remove NAs
+XANES_corr <- XANES_clean %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, FilterSize, XANES_Pi_Al, XANES_Pi_Ca, XANES_Pi_Fe, XANES_Pi_K, XANES_Pi_Mg, XANES_Pi_Na, XANES_Po_Al, XANES_Po_Fe, XANES_Po_Ca, XANES_Po_Na) %>%
+  na.omit(XANES_clean)
+
+pca <- prcomp(XANES_corr[5:14], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(XANES_corr[5:14])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 4
+yscale <- 4
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=XANES_corr$Land_Coverage_Category,shape=XANES_corr$Burn_Severity, size=XANES_corr$FilterSize))+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+scale_size_manual(values=c(3,6,9))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - all phases")
+
+
+#all phases together; open air; Po total instead of individual
+
+#format dataframe using same code as correlation and then also remove NAs
+XANES_corr <- XANES_clean %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, FilterSize, XANES_Pi_Al, XANES_Pi_Ca, XANES_Pi_Fe, XANES_Pi_K, XANES_Pi_Mg, XANES_Pi_Na, XANES_Po) %>%
+  na.omit(XANES_clean)
+
+pca <- prcomp(XANES_corr[5:11], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(XANES_corr[5:11])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 4
+yscale <- 4
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=XANES_corr$Land_Coverage_Category,shape=XANES_corr$Burn_Severity, size=XANES_corr$FilterSize))+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+scale_size_manual(values=c(3,6,9))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - all phases")
 
 
 
-#haven't updated below here yet (NMR and XANES code)
+#solid only; open air; Po individual species
+
+#format dataframe using same code as correlation and then also remove NAs; also removed columns that were all zeros for this phase
+XANES_corr <- XANES_clean %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, FilterSize, XANES_Pi_Al, XANES_Pi_Ca, XANES_Pi_Fe, XANES_Pi_K, XANES_Pi_Mg, XANES_Pi_Na, XANES_Po_Ca, XANES_Po_Na) %>%
+  na.omit(XANES_clean) %>%
+  filter(FilterSize %in% c("solid"))
+
+pca <- prcomp(XANES_corr[5:12], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(XANES_corr[5:12])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 4
+yscale <- 4
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=XANES_corr$Land_Coverage_Category,shape=XANES_corr$Burn_Severity),size=5)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - Solid")
+
+
+
+#solid only; open air; Po grouped
+
+#format dataframe using same code as correlation and then also remove NAs; also removed columns that were all zeros for this phase
+XANES_corr <- XANES_clean %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, FilterSize, XANES_Pi_Al, XANES_Pi_Ca, XANES_Pi_Fe, XANES_Pi_K, XANES_Pi_Mg, XANES_Pi_Na, XANES_Po) %>%
+  na.omit(XANES_clean) %>%
+  filter(FilterSize %in% c("solid"))
+
+pca <- prcomp(XANES_corr[5:11], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(XANES_corr[5:11])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 4
+yscale <- 4
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=XANES_corr$Land_Coverage_Category,shape=XANES_corr$Burn_Severity),size=5)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - Solid")
+```
+
+####stacked spectra and pie charts
+```{r NMR}
+#example stacked spectra
+NMR_spectra_df_subset <-NMR_spectra %>%
+  select("Chemical_Shift_parts_per_million", "BSLE_0013-solid", "BSLE_0007-solid","BSLE_0002-solid", "BSLE_0050-solid") %>%
+  dplyr::rename('solid_13' = 'BSLE_0013-solid',
+                'solid_7' = 'BSLE_0007-solid',
+                'solid_2' = 'BSLE_0002-solid',
+                'solid_50' = 'BSLE_0050-solid') %>%
+  mutate_all(~replace(., . == 0, NA)) %>%
+  mutate(solid_13 = solid_13 + 1,
+         solid_7 = solid_7 + 75,
+         solid_2 = solid_2 + 150,
+         solid_50 = solid_50 + 225) 
+         
+NMR_spectra_df_subset<-melt(NMR_spectra_df_subset, id=c("Chemical_Shift_parts_per_million"))
+
+NMR_spectra_df_subset<-subset(NMR_spectra_df_subset, value!="")
+
+NMR_stacked_spectra_df <- ggplot(NMR_spectra_df_subset, aes(x=Chemical_Shift_parts_per_million, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + ylim(0,300) + scale_x_reverse() +xlim(10,-10) +scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Chemical Shift (ppm)")
+
+#cowplot::save_plot("../figures/NMR_stacked_spectra_df.pdf", NMR_stacked_spectra_df, ncol = 1, nrow = 1, base_aspect_ratio= 1:1.7, dpi=72)
+
+pdf(file = "../figures/NMR_stacked_spectra_df.pdf", width = 3.5, height = 7) 
+print(NMR_stacked_spectra_df)
+dev.off()
+
+NMR_spectra_sb_subset <-NMR_spectra %>%
+  select("Chemical_Shift_parts_per_million", "BSLE_0014-solid", "BSLE_0011-solid","BSLE_0072-solid") %>%
+  dplyr::rename('solid_14' = 'BSLE_0014-solid',
+                'solid_11' = 'BSLE_0011-solid',
+                'solid_72' = 'BSLE_0072-solid') %>%
+  mutate_all(~replace(., . == 0, NA)) %>%
+  mutate(solid_14 = solid_14 + 1,
+         solid_11 = solid_11 + 75,
+         solid_72 = solid_72 + 150) 
+         
+NMR_spectra_sb_subset<-melt(NMR_spectra_sb_subset, id=c("Chemical_Shift_parts_per_million"))
+
+NMR_spectra_sb_subset<-subset(NMR_spectra_sb_subset, value!="")
+
+NMR_stacked_spectra_sb <- ggplot(NMR_spectra_sb_subset, aes(x=Chemical_Shift_parts_per_million, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + ylim(0,300) + scale_x_reverse() +xlim(10,-10) +scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Chemical Shift (ppm)")
+
+#cowplot::save_plot("../figures/NMR_stacked_spectra_sb.pdf", NMR_stacked_spectra_sb, ncol = 1, nrow = 1, base_aspect_ratio= 1:1.7, dpi=72)
+
+pdf(file = "../figures/NMR_stacked_spectra_sb.pdf", width = 3.5, height = 7) 
+print(NMR_stacked_spectra_sb)
+dev.off()
+
+#pie charts
+NMR <- summary_solids_conc %>%
+  select("Land_Coverage_Category", "Burn_Severity","Ortho_Mean", "Mono_Mean", "Di_Mean", "Pyro_Mean") %>%
+  dplyr::rename(Ortho = Ortho_Mean,
+                Mono = Mono_Mean,
+                Di = Di_Mean,
+                Pyro = Pyro_Mean)
+
+
+NMR_melt<-melt(NMR, id=c("Land_Coverage_Category", "Burn_Severity"))
+
+NMR_melt$variable=factor(NMR_melt$variable, levels= c("Ortho", "Pyro", "Mono", "Di"))
+
+DF.raw<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+nmr.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+pdf(file = "../figures/nmr.legend.pdf", width = 7, height = 3.5) 
+print(nmr.legend)
+dev.off()
+
+DF.raw.nmr<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.raw.nmr.pdf", width = 1, height = 1) 
+print(DF.raw.nmr)
+dev.off()
+
+DF.low<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+DF.low.nmr<-ggplot(DF.low, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.low.nmr.pdf", width = 1, height = 1) 
+print(DF.low.nmr)
+dev.off()
+
+DF.mod<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+DF.mod.nmr<-ggplot(DF.mod, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.mod.nmr.pdf", width = 1, height = 1) 
+print(DF.mod.nmr)
+dev.off()
+
+DF.high<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+DF.high.nmr<-ggplot(DF.high, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.high.nmr.pdf", width = 1, height = 1) 
+print(DF.high.nmr)
+dev.off()
+
+SB.raw<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
+SB.raw.nmr<-ggplot(SB.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.raw.nmr.pdf", width = 1, height = 1) 
+print(SB.raw.nmr)
+dev.off()
+
+SB.low<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Low")
+SB.low.nmr<-ggplot(SB.low, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.low.nmr.pdf", width = 1, height = 1) 
+print(SB.low.nmr)
+dev.off()
+
+SB.mod<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Moderate")
+SB.mod.nmr<-ggplot(SB.mod, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#780000", "#c1121f", "#003049", "#669BBC"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.mod.nmr.pdf", width = 1, height = 1) 
+print(SB.mod.nmr)
+dev.off()
+
+```
+```{r XANES}
+#example stacked spectra
+XANES_spectra_df_subset <-XANES_spectra %>%
+  select("eV", "BSLE_0013-solid_P-XANES.xmu.nor", "BSLE_0007-solid_P-XANES.xmu.nor","BSLE_0002-solid_P-XANES.xmu.nor", "BSLE_0050-solid_P-XANES.xmu.nor") %>%
+  dplyr::rename('solid_13' = 'BSLE_0013-solid_P-XANES.xmu.nor',
+                'solid_7' = 'BSLE_0007-solid_P-XANES.xmu.nor',
+                'solid_2' = 'BSLE_0002-solid_P-XANES.xmu.nor',
+                'solid_50' = 'BSLE_0050-solid_P-XANES.xmu.nor') %>%
+  mutate_all(~replace(., . == 0, NA)) %>%
+  mutate(solid_13 = solid_13 + 1,
+         solid_7 = solid_7 + 8,
+         solid_2 = solid_2 + 16,
+         solid_50 = solid_50 + 24) 
+         
+XANES_spectra_df_subset<-melt(XANES_spectra_df_subset, id=c("eV"))
+
+XANES_spectra_df_subset<-subset(XANES_spectra_df_subset, value!="")
+
+XANES_stacked_spectra_df <- ggplot(XANES_spectra_df_subset, aes(x=eV, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Energy (eV)") + xlim(2140, 2200) + ylab ("Normalized Absorption (arb. units)")
+
+pdf(file = "../figures/XANES_stacked_spectra_df.pdf", width = 3, height = 7) 
+print(XANES_stacked_spectra_df)
+dev.off()
+
+XANES_spectra_sb_subset <-XANES_spectra %>%
+  select("eV", "BSLE_0014-solid_P-XANES.xmu.nor", "BSLE_0011-solid_P-XANES.xmu.nor","BSLE_0072-solid_P-XANES.xmu.nor") %>%
+  dplyr::rename('solid_14' = 'BSLE_0014-solid_P-XANES.xmu.nor',
+                'solid_11' = 'BSLE_0011-solid_P-XANES.xmu.nor',
+                'solid_72' = 'BSLE_0072-solid_P-XANES.xmu.nor') %>%
+  mutate_all(~replace(., . == 0, NA)) %>%
+  mutate(blank = solid_72) %>%
+  mutate(solid_14 = solid_14 + 1,
+         solid_11 = solid_11 + 8,
+         solid_72 = solid_72 + 16,
+         blank = blank + 24) 
+         
+XANES_spectra_sb_subset<-melt(XANES_spectra_sb_subset, id=c("eV"))
+
+XANES_spectra_sb_subset<-subset(XANES_spectra_sb_subset, value!="")
+
+XANES_stacked_spectra_sb <- ggplot(XANES_spectra_sb_subset, aes(x=eV, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + scale_color_manual(values=c('Black','Black', 'Black', 'White')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Energy (eV)") + xlim(2140, 2200) + ylab ("Normalized Absorption (arb. units)")
+
+#cowplot::save_plot("../figures/NMR_stacked_spectra_sb.pdf", NMR_stacked_spectra_sb, ncol = 1, nrow = 1, base_aspect_ratio= 1:1.7, dpi=72)
+
+pdf(file = "../figures/XANES_stacked_spectra_sb.pdf", width = 3, height = 7) 
+print(XANES_stacked_spectra_sb)
+dev.off()
+  
+#xlab(expression(paste(~^31~P~Chemical~Shift~(ppm), sep="")))
+
+#pie charts with Po grouped and inorganic separate metals
+XANES <- summary_solids_conc %>%
+  select("Land_Coverage_Category", "Burn_Severity","XANES_Pi_K_Mean", "XANES_Pi_Mg_Mean", "XANES_Pi_Al_Mean", "XANES_Pi_Ca_Mean", "XANES_Pi_Na_Mean", "XANES_Pi_Fe_Mean", "XANES_Po_Mean") %>%
+  dplyr::rename(K = XANES_Pi_K_Mean,
+                Mg = XANES_Pi_Mg_Mean,
+                Al = XANES_Pi_Al_Mean,
+                Ca = XANES_Pi_Ca_Mean,
+                Na = XANES_Pi_Na_Mean,
+                Fe = XANES_Pi_Fe_Mean,
+                Po = XANES_Po_Mean)
+
+XANES_melt<-melt(XANES, id=c("Land_Coverage_Category", "Burn_Severity"))
+
+#XANES_melt$variable=factor(XANES_melt$variable, levels= c("Ortho", "Pyro", "Mono", "Di"))
+
+DF.raw<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+xanes.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+pdf(file = "../figures/xanes.legend.pdf", width = 7, height = 3.5) 
+print(xanes.legend)
+dev.off()
+
+DF.raw.xanes<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.raw.xanes.pdf", width = 1, height = 1) 
+print(DF.raw.xanes)
+dev.off()
+
+DF.low<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
+DF.low.xanes<-ggplot(DF.low, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.low.xanes.pdf", width = 1, height = 1) 
+print(DF.low.xanes)
+dev.off()
+
+DF.mod<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
+DF.mod.xanes<-ggplot(DF.mod, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.mod.xanes.pdf", width = 1, height = 1) 
+print(DF.mod.xanes)
+dev.off()
+
+DF.high<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
+DF.high.xanes<-ggplot(DF.high, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/DF.high.xanes.pdf", width = 1, height = 1) 
+print(DF.high.xanes)
+dev.off()
+
+SB.raw<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
+SB.raw.xanes<-ggplot(SB.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.raw.xanes.pdf", width = 1, height = 1) 
+print(SB.raw.xanes)
+dev.off()
+
+SB.low<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Low")
+SB.low.xanes<-ggplot(SB.low, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.low.xanes.pdf", width = 1, height = 1) 
+print(SB.low.xanes)
+dev.off()
+
+SB.mod<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Moderate")
+SB.mod.xanes<-ggplot(SB.mod, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#424a26", "#9B9B7A", "#D9AE94", "#F1DCA7", "#FFCB69", "#D08C60", "#997B66"))+theme_void()+
+    theme(legend.position = "none")
+pdf(file = "../figures/SB.mod.xanes.pdf", width = 1, height = 1) 
+print(SB.mod.xanes)
+dev.off()
+```
+
+
+#haven't updated below here yet (NMR and XANES code) fix
 
 ```{r}
 #RDA for XANES

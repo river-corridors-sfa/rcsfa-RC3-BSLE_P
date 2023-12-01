@@ -12,19 +12,64 @@ MethodID_DataProcessing,N/A,N/A,PXANES_T_DP_000,N/A
 Analysis_DetectionLimit,-9999,-9999,-9999,N/A
 Analysis_Precision,-9999,-9999,-9999,N/A
 Data_Status,N/A,N/A,ready_to_use,N/A
-#Start_Data,BSLE_0001-solid,Organic Material,See_P-XANES_Folder,N/A
+#Start_Data,BSLE_0001-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0001-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0001-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0002-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0002-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0002-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0003-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0003-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0003-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0004-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0004-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0004-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0005-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0005-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0006-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0006-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0006-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0007-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0007-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0007-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0008-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0008-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0008-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0009-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0009-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0009-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0010-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0010-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0010-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0011-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0011-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0011-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0012-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0012-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0012-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0013-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0013-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0013-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0014-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0014-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0014-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0016-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0016-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0016-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0017-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0017-part,Particulate,See_P-XANES_Folder,N/A
+N/A,BSLE_0017-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0050-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0050-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0050-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0051-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0051-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0051-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0052-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0052-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0052-solid,Organic Material,See_P-XANES_Folder,N/A
+N/A,BSLE_0058-filt0.7,Liquid>aqueous,See_P-XANES_Folder,N/A
+N/A,BSLE_0058-part,Particulate,See_P-XANES_Folder,N/A
 N/A,BSLE_0058-solid,Organic Material,See_P-XANES_Folder,N/A
 N/A,BSLE_0067-solid,Organic Material,See_P-XANES_Folder,N/A
 N/A,BSLE_0068-solid,Organic Material,See_P-XANES_Folder,N/A

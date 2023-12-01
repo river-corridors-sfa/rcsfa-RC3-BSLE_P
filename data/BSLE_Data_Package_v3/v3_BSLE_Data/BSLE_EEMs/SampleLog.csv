@@ -1,4 +1,4 @@
-index,Sample_Name,Fluorescence_file_dat,Absorbance_file_dat,00681_NPOC_mg_per_L_as_C
+﻿index,Sample_Name,Fluorescence_file_dat,Absorbance_file_dat,00681_NPOC_mg_per_L_as_C
 1,BSLE_0001A-filt0.2,BSLE_0001A-filt0.2_DilCorr_IFE_RamNorm.dat,BSLE_0001A-filt0.2_DilCorr_Abs.dat,See-BSLE_NPOC_TN.csv
 2,BSLE_0001B-filt0.2,BSLE_0001B-filt0.2_DilCorr_IFE_RamNorm.dat,BSLE_0001B-filt0.2_DilCorr_Abs.dat,See-BSLE_NPOC_TN.csv
 3,BSLE_0001C-filt0.2,BSLE_0001C-filt0.2_DilCorr_IFE_RamNorm.dat,BSLE_0001C-filt0.2_DilCorr_Abs.dat,See-BSLE_NPOC_TN.csv

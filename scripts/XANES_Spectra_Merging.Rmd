@@ -1,0 +1,61 @@
+---
+title: "XANES_Spectra_Merging"
+author: "Morgan Barnes"
+date: "2023-11-27"
+output: html_document
+---
+
+##This code imports normalized xmu files that were exported from Athena and merges samples together based on eV
+##Contact: Morgan E Barnes morgan.barnes@pnnl.gov
+
+#### Set Up
+```{r setup, include=FALSE, dev="CairoPNG"}
+rm(list=ls(all=T))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+```{r library}
+require(pacman)
+
+pacman::p_load(tidyverse, purrr)
+
+```
+
+##### Confirm working directory:
+```{r working directory check, echo=FALSE}
+getwd()
+```
+
+
+##Load Data
+```{r working directory check, echo=FALSE}
+#Load samples spectra and merge to make it easier to make a figure
+
+file_names  <- c("BSLE_0013-solid_P-XANES.xmu.nor", "BSLE_0007-solid_P-XANES.xmu.nor", "BSLE_0002-solid_P-XANES.xmu.nor", "BSLE_0050-solid_P-XANES.xmu.nor", "BSLE_0014-solid_P-XANES.xmu.nor", "BSLE_0011-solid_P-XANES.xmu.nor", "BSLE_0072-solid_P-XANES.xmu.nor")
+
+file_paths <- file.path("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples", file_names)
+
+
+merged_data <- file_paths %>%
+  lapply(function(file_path) {
+    read.table(file_path, header = FALSE) %>%
+    select(1:2) %>%  # Keep only the first two columns
+    dplyr::rename(eV = V1, sample = V2) # Rename columns
+  })
+
+
+merged_data <- map(file_paths, ~{
+  df <- read.table(.x, header = FALSE) %>% 
+    select(1:2) %>% setNames(c("eV", basename(.x)))
+  })
+
+
+final_df <- reduce(merged_data, full_join, by = "eV")
+
+write.csv(final_df, "../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/xanes_example_spectra.csv")
+```
+
+
+
+

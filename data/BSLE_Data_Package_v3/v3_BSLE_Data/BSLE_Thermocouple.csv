@@ -1,4 +1,4 @@
-# HeaderRows_10,,,,,,
+﻿# HeaderRows_10,,,,,,
 # HeaderRows_Format: Column_Header; Unit; InstallationMethod_ID; Instrument_Summary,,,,,,
 # Date; YYYY-MM-DD; Thermocouple_01; manually recorded,,,,,,
 #Timestamp; hh:mm:ss UTC-08:00; Thermocouple_01; Campbell Scientific CR1000 data logger set to Pacific Standard Time set to record time every 15 seconds,,,,,,
