@@ -366,7 +366,7 @@ XANES_clean<- Meta %>%
 ```
 
 ####Additional Calcs
-```{r Calcs}
+```{r data_solids}
 #NMR extraction efficiency
 data_solids<-data_solids %>%
   mutate(NMR_EE_P_perc=Total_Extractable_P_mg_per_kg/Solid_P_mg_kg*100)
@@ -389,17 +389,41 @@ data_solids<-data_solids %>%
   mutate(Solid_C_g_kg = Solid_C_mg_kg/1000) %>%
   mutate(Solid_N_g_kg = Solid_N_mg_kg/1000)
 
+#molar stoichiometry of P:element in solid phase
+data_solids<-data_solids %>%
+  mutate(Fe.P.MolarRatio=(Solid_Fe_mg_kg/55.845)/(Solid_P_mg_kg/30.97))%>%
+  mutate(K.P.MolarRatio=(Solid_K_mg_kg/39.0983)/(Solid_P_mg_kg/30.97))%>%
+  mutate(Na.P.MolarRatio=(Solid_Na_mg_kg/22.989)/(Solid_P_mg_kg/30.97))%>%
+  mutate(Al.P.MolarRatio=(Solid_Al_mg_kg/26.982)/(Solid_P_mg_kg/30.97))%>%
+  mutate(Mg.P.MolarRatio=(Solid_Mg_mg_kg/24.305)/(Solid_P_mg_kg/30.97))%>%
+  mutate(Ca.P.MolarRatio=(Solid_Ca_mg_kg/40.078)/(Solid_P_mg_kg/30.97))%>%
+  mutate(S.P.MolarRatio=(Solid_S_mg_kg/32.065)/(Solid_P_mg_kg/30.97))%>%
+  mutate(C.P.MolarRatio=(Solid_C_mg_kg/12.011)/(Solid_P_mg_kg/30.97))%>%
+  mutate(N.P.MolarRatio=(Solid_N_mg_kg/14.01)/(Solid_P_mg_kg/30.97))
+
+
+```
+
+```{r data}
 #calculate leachate particulate concentrations as the difference between filtered and unfiltered
 data<-data %>%
   mutate(Leachate_Ca_mg_L_part = Leachate_Ca_mg_L_unfilt - Leachate_Ca_mg_L_filt0.7) %>%
+  mutate(Leachate_Ca_mg_L_part = if_else(Leachate_Ca_mg_L_part < 0, NA, Leachate_Ca_mg_L_part))%>%
   mutate(Leachate_Mg_mg_L_part = Leachate_Mg_mg_L_unfilt - Leachate_Mg_mg_L_filt0.7) %>%
+  mutate(Leachate_Mg_mg_L_part = if_else(Leachate_Mg_mg_L_part < 0, NA, Leachate_Mg_mg_L_part))%>%
   mutate(Leachate_P_mg_L_part = Leachate_P_mg_L_unfilt - Leachate_P_mg_L_filt0.7) %>%
+  mutate(Leachate_P_mg_L_part = if_else(Leachate_P_mg_L_part < 0, NA, Leachate_P_mg_L_part))%>%
   mutate(Leachate_K_mg_L_part = Leachate_K_mg_L_unfilt - Leachate_K_mg_L_filt0.7) %>%
+  mutate(Leachate_K_mg_L_part = if_else(Leachate_K_mg_L_part < 0, NA, Leachate_K_mg_L_part))%>%
   mutate(Leachate_Na_mg_L_part = Leachate_Na_mg_L_unfilt - Leachate_Na_mg_L_filt0.7) %>%
+  mutate(Leachate_Na_mg_L_part = if_else(Leachate_Na_mg_L_part < 0, NA, Leachate_Na_mg_L_part))%>%
   mutate(Leachate_S_mg_L_part = Leachate_S_mg_L_unfilt - Leachate_S_mg_L_filt0.7) %>%
+  mutate(Leachate_S_mg_L_part = if_else(Leachate_S_mg_L_part < 0, NA, Leachate_S_mg_L_part))%>%
   mutate(Leachate_Al_mg_L_part = Leachate_Al_mg_L_unfilt - Leachate_Al_mg_L_filt0.7) %>%
-  mutate(Leachate_Fe_mg_L_part = Leachate_Fe_mg_L_unfilt - Leachate_Fe_mg_L_filt0.7)
-
+  mutate(Leachate_Al_mg_L_part = if_else(Leachate_Al_mg_L_part < 0, NA, Leachate_Al_mg_L_part))%>%
+  mutate(Leachate_Fe_mg_L_part = Leachate_Fe_mg_L_unfilt - Leachate_Fe_mg_L_filt0.7) %>%
+  mutate(Leachate_Fe_mg_L_part = if_else(Leachate_Fe_mg_L_part < 0, NA, Leachate_Fe_mg_L_part))
+  
 #convert units of leachates: normalize to mass of char
 data<-data %>%
   mutate(Leachate_Ca_mg_kgchar_unfilt = Leachate_Ca_mg_L_unfilt*Leachate_vol_mL/Char_leached_g*1000/1000) %>%
@@ -492,19 +516,29 @@ data<-data %>%
   mutate(Leachate_mg_N_per_g_N_in_solid_filt0.7 = TN_mg_N_per_L*(1/1000)*Leachate_vol_mL*(1/ Char_leached_g)*(1/Solid_N_mg_kg)*1000*1000)%>%
   mutate(Leachate_mg_MBD_per_g_P_in_solid_filt0.7 = MBD_P_mg_per_L_filt0.7*(1/1000)*Leachate_vol_mL*(1/Char_leached_g)*(1/Solid_N_mg_kg)*1000*1000)
 
+#molar stoichiometry of P:element in particulate and aqueous phases
+data <- data %>%
+  mutate(Fe.P.MolarRatio_part=(Leachate_Fe_mg_L_part/55.845)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(K.P.MolarRatio_part=(Leachate_K_mg_L_part/39.0983)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(Na.P.MolarRatio_part=(Leachate_Na_mg_L_part/22.989)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(Al.P.MolarRatio_part=(Leachate_Al_mg_L_part/26.982)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(Mg.P.MolarRatio_part=(Leachate_Mg_mg_L_part/24.305)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(Ca.P.MolarRatio_part=(Leachate_Ca_mg_L_part/40.078)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(S.P.MolarRatio_part=(Leachate_S_mg_L_part/32.065)/(Leachate_P_mg_L_part/30.97))%>%
+  mutate(Fe.P.MolarRatio_filt0.7=(Leachate_Fe_mg_L_filt0.7/55.845)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(K.P.MolarRatio_filt0.7=(Leachate_K_mg_L_filt0.7/39.0983)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(Na.P.MolarRatio_filt0.7=(Leachate_Na_mg_L_filt0.7/22.989)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(Al.P.MolarRatio_filt0.7=(Leachate_Al_mg_L_filt0.7/26.982)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(Mg.P.MolarRatio_filt0.7=(Leachate_Mg_mg_L_filt0.7/24.305)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(Ca.P.MolarRatio_filt0.7=(Leachate_Ca_mg_L_filt0.7/40.078)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(S.P.MolarRatio_filt0.7=(Leachate_S_mg_L_filt0.7/32.065)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(C.P.MolarRatio_filt0.7=(NPOC_mg_C_per_L/12.011)/(Leachate_P_mg_L_filt0.7/30.97))%>%
+  mutate(N.P.MolarRatio_filt0.7=(TN_mg_N_per_L/14.01)/(Leachate_P_mg_L_filt0.7/30.97))
+  
 
-#FIX THIS
-#molar stoichiometry of P:element in solid phase fix
-test<-data_solids %>%
-  mutate(Fe.P.MolarRatio=(Solid_Fe_mg_kg/55.845/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(K.P.MolarRatio=(Solid_K_mg_kg/39.0983/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(Na.P.MolarRatio=(Solid_Na_mg_kg/22.989/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(Al.P.MolarRatio=(Solid_Al_mg_kg/26.982/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(Mg.P.MolarRatio=(Solid_Mg_mg_kg/24.305/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(Ca.P.MolarRatio=(Solid_Ca_mg_kg/40.078/1000)/(Solid_P_mg_kg/30.97/1000))%>%
-  mutate(S.P.MolarRatio=(Solid_S_mg_kg/32.065/1000)/(Solid_P_mg_kg/30.97/1000))
+```
 
-
+```{r save csv}
 #save csv of final collated data with manipulations
 write.csv(data, "../data/data.csv", row.names = FALSE) #all data
 write.csv(data_solids, "../data/data_solids.csv", row.names = FALSE) #solids only
@@ -1090,6 +1124,179 @@ summary(model)
 
 ```
 
+```{r stoichiometry solid and leachates}
+#format data
+stoich_solid<-data_solids %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, Ca.P.MolarRatio, Mg.P.MolarRatio, Fe.P.MolarRatio, Al.P.MolarRatio, Na.P.MolarRatio, K.P.MolarRatio, S.P.MolarRatio, N.P.MolarRatio, C.P.MolarRatio) %>%
+  dplyr::rename(
+    'Ca:P' = 'Ca.P.MolarRatio',
+    'Mg:P' = 'Mg.P.MolarRatio',
+    'Fe:P' = 'Fe.P.MolarRatio',
+    'Al:P' = 'Al.P.MolarRatio',
+    'Na:P' = 'Na.P.MolarRatio',
+    'K:P' = 'K.P.MolarRatio',
+    'S:P' = 'S.P.MolarRatio',
+    'N:P' = 'N.P.MolarRatio',
+    'C:P' = 'C.P.MolarRatio')%>%
+  mutate(filter = 'Solid')
+
+stoich_leachates<-data %>%
+  select(Parent_ID, Ca.P.MolarRatio_part, Mg.P.MolarRatio_part, Fe.P.MolarRatio_part, Al.P.MolarRatio_part, Na.P.MolarRatio_part, K.P.MolarRatio_part, S.P.MolarRatio_part, Ca.P.MolarRatio_filt0.7, Mg.P.MolarRatio_filt0.7, Fe.P.MolarRatio_filt0.7, Al.P.MolarRatio_filt0.7, Na.P.MolarRatio_filt0.7, K.P.MolarRatio_filt0.7, S.P.MolarRatio_filt0.7, N.P.MolarRatio_filt0.7, C.P.MolarRatio_filt0.7) %>%
+  dplyr::rename(
+    'Ca_P_part' = 'Ca.P.MolarRatio_part',
+    'Mg_P_part' = 'Mg.P.MolarRatio_part',
+    'Fe_P_part' = 'Fe.P.MolarRatio_part',
+    'Al_P_part' = 'Al.P.MolarRatio_part',
+    'Na_P_part' = 'Na.P.MolarRatio_part',
+    'K_P_part' = 'K.P.MolarRatio_part',
+    'S_P_part' = 'S.P.MolarRatio_part',
+    'Ca_P_filt0.7' = 'Ca.P.MolarRatio_filt0.7',
+    'Mg_P_filt0.7' = 'Mg.P.MolarRatio_filt0.7',
+    'Fe_P_filt0.7' = 'Fe.P.MolarRatio_filt0.7',
+    'Al_P_filt0.7' = 'Al.P.MolarRatio_filt0.7',
+    'Na_P_filt0.7' = 'Na.P.MolarRatio_filt0.7',
+    'K_P_filt0.7' = 'K.P.MolarRatio_filt0.7',
+    'S_P_filt0.7' = 'S.P.MolarRatio_filt0.7',
+    'N_P_filt0.7' = 'N.P.MolarRatio_filt0.7',
+    'C_P_filt0.7' = 'C.P.MolarRatio_filt0.7'
+  )
+
+stoich_part<-data %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, Ca.P.MolarRatio_part, Mg.P.MolarRatio_part, Fe.P.MolarRatio_part, Al.P.MolarRatio_part, Na.P.MolarRatio_part, K.P.MolarRatio_part, S.P.MolarRatio_part) %>%
+  dplyr::rename(
+    'Ca:P' = 'Ca.P.MolarRatio_part',
+    'Mg:P' = 'Mg.P.MolarRatio_part',
+    'Fe:P' = 'Fe.P.MolarRatio_part',
+    'Al:P' = 'Al.P.MolarRatio_part',
+    'Na:P' = 'Na.P.MolarRatio_part',
+    'K:P' = 'K.P.MolarRatio_part',
+    'S:P' = 'S.P.MolarRatio_part')%>%
+  mutate(filter = 'Particulate')
+
+stoich_filt<-data %>%
+  select(Parent_ID, Burn_Severity, Land_Coverage_Category, Ca.P.MolarRatio_filt0.7, Mg.P.MolarRatio_filt0.7, Fe.P.MolarRatio_filt0.7, Al.P.MolarRatio_filt0.7, Na.P.MolarRatio_filt0.7, K.P.MolarRatio_filt0.7, S.P.MolarRatio_filt0.7, C.P.MolarRatio_filt0.7, N.P.MolarRatio_filt0.7) %>%
+  dplyr::rename(
+    'Ca:P' = 'Ca.P.MolarRatio_filt0.7',
+    'Mg:P' = 'Mg.P.MolarRatio_filt0.7',
+    'Fe:P' = 'Fe.P.MolarRatio_filt0.7',
+    'Al:P' = 'Al.P.MolarRatio_filt0.7',
+    'Na:P' = 'Na.P.MolarRatio_filt0.7',
+    'K:P' = 'K.P.MolarRatio_filt0.7',
+    'S:P' = 'S.P.MolarRatio_filt0.7',
+    'C:P' = 'C.P.MolarRatio_filt0.7',
+    'N:P' = 'N.P.MolarRatio_filt0.7')%>%
+  mutate(filter = 'Aqueous')
+
+
+stoich<- stoich_leachates %>%
+  full_join(stoich_solid)
+
+stoich<- stoich_part %>%
+  full_join(stoich_filt)%>%
+  full_join(stoich_solid)
+  
+#bar chart with phase as facet; different colored bars for the stoichiometry
+stoich<-melt(stoich, id=c("Parent_ID", "Burn_Severity", "Land_Coverage_Category", "filter"))
+
+stoich_mean <- stoich %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category, filter, variable)%>%
+  dplyr::summarize(
+    value_mean = mean(value, na.rm = TRUE),
+    value_sd = sd(value, na.rm = TRUE))
+
+stoich_mean$filter=factor(stoich_mean$filter, levels= c("Solid", "Particulate", "Aqueous"))
+stoich_mean$Burn_Severity=factor(stoich_mean$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+ggplot(stoich_mean, aes(x = Burn_Severity, y = value_mean, fill = Land_Coverage_Category)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Burn Severity",
+       y = "Molar Ratio (Element:P)") + facet_grid(filter~variable, scales = "free")+ theme_classic() + scale_fill_manual(values = c("#332188", "#117633"))+coord_flip()
+
+ggplot(stoich_mean, aes(x = Burn_Severity, y = value_mean, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Burn Severity",
+       y = "Molar Ratio (Element:P)") + facet_grid(filter~Land_Coverage_Category, scales = "free")+ theme_classic() + scale_fill_manual(values = c("#332188", "#117633", "#43a999", "#88cced", "gray", "#ddcb77", "#cc6677", "#aa4499", "#882255"))
+
+
+#old code below
+#summarize data (by land cover, burn severity, and filter) to get mean and standard deviation
+stoich_mean <- stoich %>%
+  dplyr::group_by(Burn_Severity, Land_Coverage_Category, filter) %>%
+  dplyr::summarize(
+    Ca_P_Mean = mean(Ca_P, na.rm = TRUE),
+    Mg_P_Mean = mean(Mg_P, na.rm = TRUE),
+    Fe_P_Mean = mean(Fe_P, na.rm = TRUE),
+    Al_P_Mean = mean(Al_P, na.rm = TRUE),
+    Na_P_Mean = mean(Na_P, na.rm = TRUE),
+    K_P_Mean = mean(K_P, na.rm = TRUE),
+    S_P_Mean = mean(S_P, na.rm = TRUE),
+    C_P_Mean = mean(C_P, na.rm = TRUE),
+    N_P_Mean = mean(N_P, na.rm = TRUE),
+    Ca_P_sd = sd(Ca_P, na.rm = TRUE),
+    Mg_P_sd = sd(Mg_P, na.rm = TRUE),
+    Fe_P_sd = sd(Fe_P, na.rm = TRUE),
+    Al_P_sd = sd(Al_P, na.rm = TRUE),
+    Na_P_sd = sd(Na_P, na.rm = TRUE),
+    K_P_sd = sd(K_P, na.rm = TRUE),
+    S_P_sd = sd(S_P, na.rm = TRUE),
+    C_P_sd = sd(C_P, na.rm = TRUE),
+    N_P_sd = sd(N_P, na.rm = TRUE))
+
+
+ggplot(stoich_mean, aes(x = Burn_Severity)) +
+  geom_bar(aes(y = Ca_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.2) +
+  geom_bar(aes(y = Mg_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.4) +
+  geom_bar(aes(y = Fe_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = Ca_P_Mean - Ca_P_sd, ymax = Ca_P_Mean + Ca_P_sd),
+                position = position_dodge(width = 0.2),
+                width = 0.1) +
+  geom_errorbar(aes(ymin = Mg_P_Mean - Mg_P_sd, ymax = Mg_P_Mean + Mg_P_sd),
+                position = position_dodge(width = 0.4),
+                width = 0.1) +
+  geom_errorbar(aes(ymin = Fe_P_Mean - Fe_P_sd, ymax = Fe_P_Mean + Fe_P_sd),
+                position = position_dodge(width = 0.6),
+                width = 0.1) +
+  labs(title = "Burn Severity vs. Mean with Error Bars",
+       x = "Burn Severity",
+       y = "Mean") +
+  scale_fill_manual(values = c("Aqueous" = "red", "Particulate" = "blue", "Solid" = "green")) +
+  theme_classic()+ facet_grid(filter~Land_Coverage_Category, scales = "free")
+  
+ggplot(stoich_mean, aes(x = Burn_Severity)) +
+  geom_bar(aes(y = Ca_P_Mean, fill = "red"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
+  geom_bar(aes(y = Mg_P_Mean, fill = "blue"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
+  geom_bar(aes(y = Fe_P_Mean, fill = "green"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
+  geom_errorbar(aes(ymin = Ca_P_Mean - Ca_P_sd, ymax = Ca_P_Mean + Ca_P_sd),
+                position = position_dodge(width = 0.4),
+                width = 0.2) +
+  geom_errorbar(aes(ymin = Mg_P_Mean - Mg_P_sd, ymax = Mg_P_Mean + Mg_P_sd),
+                position = position_dodge(width = 0.4),
+                width = 0.2) +
+  geom_errorbar(aes(ymin = Fe_P_Mean - Fe_P_sd, ymax = Fe_P_Mean + Fe_P_sd),
+                position = position_dodge(width = 0.4),
+                width = 0.2) +
+  labs(title = "Burn Severity vs. Mean with Error Bars",
+       x = "Burn Severity",
+       y = "Mean") +
+  scale_fill_manual(values = c("red", "blue", "green")) +
+  theme_minimal() + facet_grid(filter ~ Land_Coverage_Category, scales = "free")
+
+
+#bar chart with phase as facet; different colored bars for the stoichiometry
+stoich_mean<-melt(stoich_mean, id=c("Burn_Severity", "Land_Coverage_Category", "filter"))
+
+
+
+ggplot(stoich_mean, aes(x = Burn_Severity, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Burn Severity",
+       y = "Stoichiometry") + facet_grid(filter~Land_Coverage_Category, scales = "free")+ theme_classic()
+  scale_fill_manual(values = c("red", "blue", "green"))
+
+
+herehere
+```
+
 
 ####PCA & RDAs
 ```{r PCA solid bulk chem}
@@ -1275,26 +1482,8 @@ print(burn_conditions_pca)
 dev.off()
 ```
 
-```{r RDAs}
+```{r RDAs and PCAs for mass norm all reps}
 #setting up an RDA to look at how burn conditions (duration, max temp) and chemistry of solid char (P, Ca, Mg, K, Fe, Al, Na concentration, leachate metals (Ca, Fe, Al, Mg, Na, K), XANES categories, and NMR categories) impact P mobilization (total P concentration in unfiltered leachate, aqueous phase (<0.7), and particulate phase (>0.7); soluble reactive P); color by land cover and shape by burn severity
-
-#make dataframe with solid samples (leachate avg) to prevent using same number so many times
-#alternative RDA: avergae leachate concentrations
-leachate_mean <- leachate %>%
-  dplyr::group_by(Parent_ID) %>%
-  dplyr::summarize(
-    Leachate_P_mg_kgchar_part_Mean = mean(Leachate_P_mg_kgchar_part, na.rm = TRUE),
-    Leachate_P_mg_kgchar_filt0.7_Mean = mean(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
-    Leachate_MBD_mg_kgchar_filt0.7_Mean = mean(Leachate_MBD_mg_kgchar_filt0.7, na.rm = TRUE),
-    pH_Mean = mean(pH)
-  )
-
-solid <- data_solids %>%
-  select(1,3, 5, 10, 11, 31:34, 88, 96:101, 111:120)
-
-data_rda_avg<- solid %>%
-  full_join(leachate_mean) %>%
-  filter(Solid_Na_g_kg != "") #remove NAs
 
 #this is example code of how to do an RDA
 #reference: http://dmcglinn.github.io/quant_methods/lessons/multivariate_models.html
@@ -1599,106 +1788,79 @@ text(x = sc_bp[,1] -0.1, # adjust text coordinate to avoid overlap with arrow ti
 legend("bottomright", legend=c("Unburned", "Low", "Moderate", "High", "DFF", "SBS"), col=c(rep("black",4), "#346648", "#dbb40d"), pch=c(18, 16, 15, 17, 16, 16))
 
 
+```
 
 
 
+```{r RDAs and PCAs for mass norm averaged}
+#setting up an RDA to look at how burn conditions (duration, max temp) and chemistry of solid char (P, Ca, Mg, K, Fe, Al, Na concentration, leachate metals (Ca, Fe, Al, Mg, Na, K), XANES categories, and NMR categories) impact P mobilization (total P concentration in unfiltered leachate, aqueous phase (<0.7), and particulate phase (>0.7); soluble reactive P); color by land cover and shape by burn severity
 
-#old code below
+#this is example code of how to do an RDA
+#reference: http://dmcglinn.github.io/quant_methods/lessons/multivariate_models.html
+#other reference: https://popgen.nescent.org/2018-03-27_RDA_GEA.html
+#citation in here: https://cran.r-project.org/web/packages/vegan/vignettes/FAQ-vegan.html
+#reference about scaling: https://mb3is.megx.net/gustame/constrained-analyses/rda
 
+#make dataframe with all leachate samples
+leachate <- data %>%
+  select(Parent_ID, Sample_ID, Land_Coverage_Category,Burn_Severity, Burn_Duration, Char_Max_Temp, pH, Leachate_P_mg_kgchar_part, Leachate_P_mg_kgchar_filt0.7,Leachate_P_mg_kgchar_unfilt, Leachate_MBD_mg_kgchar_filt0.7, Leachate_Al_mg_kgchar_unfilt, Leachate_Ca_mg_kgchar_unfilt, Leachate_K_mg_kgchar_unfilt, Leachate_Fe_mg_kgchar_unfilt, Leachate_Na_mg_kgchar_unfilt, Leachate_Mg_mg_kgchar_unfilt, Leachate_Al_mg_kgchar_part, Leachate_Ca_mg_kgchar_part, Leachate_K_mg_kgchar_part, Leachate_Fe_mg_kgchar_part, Leachate_Na_mg_kgchar_part, Leachate_Mg_mg_kgchar_part, Leachate_Al_mg_kgchar_filt0.7, Leachate_Ca_mg_kgchar_filt0.7, Leachate_K_mg_kgchar_filt0.7, Leachate_Fe_mg_kgchar_filt0.7, Leachate_Na_mg_kgchar_filt0.7, Leachate_Mg_mg_kgchar_filt0.7, Leachate_C_mg_kgchar_filt0.7, Leachate_N_mg_kgchar_filt0.7) #1:3, 5, 10, 11, 49, 62, 70, 78, 50 and more for metals added
 
-levels(enviro$Site) <- c("GR2","GR3","GR5","BAR","SJER","SPR", "PR", "SH")
-eco <- enviro$Site
-bgg <- c("#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1") # 8 colors for our sites
-shapes <- c(18, 16, 15,17) 
-sh <- as.factor(enviro$Horizon)
-plot(rda_tree, type="n", scaling=2)
-points(rda_tree, display="species", pch=20, cex=0.7, col="gray32", scaling=2)           #the chemical species from NMR and XANES
-points(rda_tree, display="sites", pch=shapes[sh], cex=1.3, scaling=2, col=bgg[eco]) # the soil samples
-text(rda_tree, scaling=2, display="bp", col="#0868ac", cex=1)                           # the predictors
-#legend("bottomright", legend=levels(eco), bty="n", pch=21, cex=1, col=bg)
-legend("bottomright", legend=c("A", "B", "C", "GR2", "GR3", "GR5", "BAR", "SJER", "SPR", "PR", "SH"), col=c(rep("black",3), "#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1"), pch=c(16, 15, 17, 16, 16, 16, 16, 16, 16, 16, 16))
+#make dataframe with solid samples (leachate avg) to prevent using same number so many times
+#alternative RDA: avergae leachate concentrations
+leachate_mean <- leachate %>%
+  dplyr::group_by(Parent_ID) %>%
+  dplyr::summarize(
+    Burn_Duration_Mean = mean(Burn_Duration, na.rm = TRUE),
+    Char_Max_Temp_Mean = mean(Char_Max_Temp, na.rm = TRUE),
+    pH_Mean = mean(pH, na.rm = TRUE),
+    Leachate_P_mg_kgchar_part_Mean = mean(Leachate_P_mg_kgchar_part, na.rm = TRUE),
+    Leachate_P_mg_kgchar_filt0.7_Mean = mean(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_P_mg_kgchar_unfilt_Mean = mean(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_MBD_mg_kgchar_filt0.7_Mean = mean(Leachate_MBD_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_Al_mg_kgchar_unfilt_Mean = mean(Leachate_Al_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_Ca_mg_kgchar_unfilt_Mean = mean(Leachate_Ca_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_K_mg_kgchar_unfilt_Mean = mean(Leachate_K_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_Fe_mg_kgchar_unfilt_Mean = mean(Leachate_Fe_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_Na_mg_kgchar_unfilt_Mean = mean(Leachate_Na_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_Mg_mg_kgchar_unfilt_Mean = mean(Leachate_Mg_mg_kgchar_unfilt, na.rm = TRUE),
+    Leachate_Al_mg_kgchar_part_Mean = mean(Leachate_Al_mg_kgchar_part, na.rm = TRUE),
+    Leachate_Ca_mg_kgchar_part_Mean = mean(Leachate_Ca_mg_kgchar_part, na.rm = TRUE),
+    Leachate_K_mg_kgchar_part_Mean = mean(Leachate_K_mg_kgchar_part, na.rm = TRUE),
+    Leachate_Fe_mg_kgchar_part_Mean = mean(Leachate_Fe_mg_kgchar_part, na.rm = TRUE),
+    Leachate_Na_mg_kgchar_part_Mean = mean(Leachate_Na_mg_kgchar_part, na.rm = TRUE),
+    Leachate_Mg_mg_kgchar_part_Mean = mean(Leachate_Mg_mg_kgchar_part, na.rm = TRUE),
+    Leachate_Al_mg_kgchar_filt0.7_Mean = mean(Leachate_Al_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_Ca_mg_kgchar_filt0.7_Mean = mean(Leachate_Ca_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_K_mg_kgchar_filt0.7_Mean = mean(Leachate_K_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_Fe_mg_kgchar_filt0.7_Mean = mean(Leachate_Fe_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_Na_mg_kgchar_filt0.7_Mean = mean(Leachate_Na_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_Mg_mg_kgchar_filt0.7_Mean = mean(Leachate_Mg_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_C_mg_kgchar_filt0.7_Mean = mean(Leachate_C_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_N_mg_kgchar_filt0.7_Mean = mean(Leachate_N_mg_kgchar_filt0.7, na.rm = TRUE)
+  )
 
+solid <- data_solids %>%
+  select(Parent_ID, Land_Coverage_Category, Burn_Severity, Ortho, Mono, Di, Pyro, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg) %>%
+  mutate(NMR_Pi = Ortho+Pyro) %>%
+  mutate(NMR_Po = Mono + Di) #1, 31:34, 88, 96:101, 111:120 and more
 
-plot(rda_tree, type='n', scaling=2)
-orditorp(rda_tree, display='sp', cex=0.5, scaling=2, col='blue')
-text(rda_tree, display='cn', col='red')
-
-
-legend("bottomright", legend=levels(eco), bty="n", pch=21, cex=1, col=bgg)
-
-
-
-
-
-
-
-#RDA: How does solid P chemistry (NMR, XANES) influence elemental concentrations in leachate (unfilt, filt, part, molybdate)?; color by burn severity, shape by feedstock; uses leachate means; VIF is too high
-data_rda<- solid %>%
-  full_join(leachate_mean) %>%
-  filter(Solid_Na_g_kg != "") #remove NAs
-
-#create dataframe for sample variables
-samples<-data_rda[ c(27:30)]
-#create dataframe for burn condition variables
-enviro<-data_rda[ c(6:16)]
-
-#make sure both dataframes have equal rows
-all.equal(rownames(samples), rownames(enviro))
-
-#RDA (this anaysis expects a linear response of each sample to the environmental variables)
-rda_tree=rda(samples~ . , data=enviro)
-rda_tree
-RsquareAdj(rda_tree)
-summary(eigenvals(rda_tree, model = "constrained"))
-
-#see the factor loadings (correlations of each variable with each pca axis)
-scores(rda_tree, choices=1:2, display="species", scaling=2)
-
-#plot it
-plot(rda_tree, type='n', scaling=2)
-orditorp(rda_tree, display='sp', cex=0.5, scaling=2, col='blue')
-text(rda_tree, display='cn', col='red')
-
-#check correlation
-pairs.panels(enviro, scale=T)
-
-#can visualize RDA importance
-screeplot(rda_tree)
-
-#check significance of all PCAs
-signif.full <- anova.cca(rda_tree, parallel=getOption("mc.cores")) # default is permutation=999
-signif.full #model is significant
-
-#check significance of individual PCAs
-signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
-signif.axis #only RDA1 and RDA 2 are sig
-
-#check VIF
-vif.cca(rda_tree)
-
-#compare the model to chance with permutation test
-anova(rda_tree)
-
-#plot again
-plot(rda_tree, scaling=2) #this just doesn't work; not significant, VIF too high
-
-
-
-
-#How does feedstock and burn severity influence solid P chemistry (P conc, NMR, XANES)?
-data_rda<- solid %>%
+data_rda_avg<- solid %>%
   full_join(leachate_mean) 
+#can add this to filter out NAs if I decide to use solid sodium conc in analysis   filter(Solid_Na_g_kg != "") #remove NAs
 
-#create dataframe for sample variables
-samples<-data_rda[ c(6:17)]
-#create dataframe for burn condition variables
-enviro<-data_rda[ c(2:3)]
+
+#RDA 1: How does solid composition (concentration, xanes, nmr) and burn conditions impact elements in leachates (particulates)
+#create dataframe for dependent variables
+samples<-data_rda_avg[ c('Leachate_P_mg_kgchar_part_Mean', 'Leachate_Ca_mg_kgchar_part_Mean',  'Leachate_Mg_mg_kgchar_part_Mean')] 
+#create dataframe for independent variables
+enviro<-data_rda_avg[ c('Land_Coverage_Category', 'Burn_Severity', 'Burn_Duration_Mean', 'Char_Max_Temp_Mean', 'pH_Mean', 'XANES_Po', 'XANES_Pi_Ca', 'XANES_Pi_Mg', 'Solid_P_g_kg', 'Solid_Ca_g_kg', 'Solid_Mg_g_kg')]
 
 #make sure both dataframes have equal rows
 all.equal(rownames(samples), rownames(enviro))
 
+
 #RDA (this anaysis expects a linear response of each sample to the environmental variables)
-rda_tree=rda(samples~ . , data=enviro)
+rda_tree=rda(samples~ . , data=enviro[3:11], scale =TRUE, center = TRUE)
 rda_tree
 RsquareAdj(rda_tree)
 summary(eigenvals(rda_tree, model = "constrained"))
@@ -1706,13 +1868,8 @@ summary(eigenvals(rda_tree, model = "constrained"))
 #see the factor loadings (correlations of each variable with each pca axis)
 scores(rda_tree, choices=1:2, display="species", scaling=2)
 
-#plot it
-plot(rda_tree, type='n', scaling=2)
-orditorp(rda_tree, display='sp', cex=0.5, scaling=1, col='blue')
-text(rda_tree, display='cn', col='red')
-
 #check correlation
-pairs.panels(enviro, scale=T)
+pairs.panels(enviro[3:11], scale=T)
 
 #can visualize RDA importance
 screeplot(rda_tree)
@@ -1723,87 +1880,258 @@ signif.full #model is significant
 
 #check significance of individual PCAs
 signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
-signif.axis #only RDA1 and RDA 2 are sig
+signif.axis 
 
-#check VIF
-vif.cca(rda_tree)
-
-#compare the model to chance with permutation test
-anova(rda_tree)
-
-#plot again
-plot(rda_tree, scaling=2) #this is significant and VIF is good; make this one pretty
-
-
-
-#How does feedstock and burn severity influence solid (P concentration, NMR, XANES) and leachate (concentration of different phases and molybdate) chemistry 
-data_rda<- solid %>%
-  full_join(leachate_mean) 
-
-#create dataframe for sample variables
-samples<-data_rda[ c(6:17, 27:30)]
-#create dataframe for burn condition variables
-enviro<-data_rda[ c(2:3)]
-
-#make sure both dataframes have equal rows
-all.equal(rownames(samples), rownames(enviro))
-
-#RDA (this anaysis expects a linear response of each sample to the environmental variables)
-rda_tree=rda(samples~ . , data=enviro)
-rda_tree
-RsquareAdj(rda_tree)
-summary(eigenvals(rda_tree, model = "constrained"))
-
-#see the factor loadings (correlations of each variable with each pca axis)
-scores(rda_tree, choices=1:2, display="species", scaling=2)
-
-#plot it
-plot(rda_tree, type='n', scaling=2)
-orditorp(rda_tree, display='sp', cex=0.5, scaling=1, col='blue')
-text(rda_tree, display='cn', col='red')
-
-#check correlation
-pairs.panels(enviro, scale=T)
-
-#can visualize RDA importance
-screeplot(rda_tree)
-
-#check significance of all PCAs
-signif.full <- anova.cca(rda_tree, parallel=getOption("mc.cores")) # default is permutation=999
-signif.full #model is significant
-
-#check significance of individual PCAs
-signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
-signif.axis #only RDA1 and RDA 2 are sig
-
-#check VIF
-vif.cca(rda_tree)
+#check significance of independent variables
+anova.cca(rda_tree, by = "terms")
 
 #compare the model to chance with permutation test
 anova(rda_tree)
 
-#plot again
-plot(rda_tree, scaling=2) #this is isn't as good with the leachates included
+#check VIF
+vif.cca(rda_tree) #some VIF too high
+sqrt(vif.cca(rda_tree)) #over 2 is considered high https://pmassicotte.github.io/stats-denmark-2019/07_rda.html#/linear-dependencies-2
 
+#use function to select the best explantory variables
+#install.packages("packfor", repos = "http://R-Forge.R-project.org")
 
+fs <- forward.sel(samples, # Y matrix
+  enviro[3:11], # X matrix
+  adjR2thresh = 0.05, # Set the adj.R2 threshold
+  alpha = 1.5, # Set alpha level
+  nperm = 999  # Number of permutations
+) 
+
+fs
 
 #make a pretty plot
-#use
-#USE THIS ONE AS AN EXAMPLE!! (has horizons as difference shapes but need to figure out legend)
-#levels(enviro$Site) <- c("GR2","GR3","GR5","BAR","SJER","SPR", "PR", "SH")
-#eco <- enviro$Site
-#bgg <- c("#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1") # 8 colors for our sites
-#shapes <- c(18, 16, 15,17) 
-#sh <- as.factor(enviro$Horizon)
-#plot(rda_tree, type="n", scaling=2)
-#points(rda_tree, display="species", pch=20, cex=0.7, col="gray32", scaling=2)           #the chemical species from NMR and XANES
-#points(rda_tree, display="sites", pch=shapes[sh], cex=1.3, scaling=2, col=bgg[eco]) # the soil samples
-#text(rda_tree, scaling=2, display="bp", col="#0868ac", cex=1)                           # the predictors
-#legend("bottomright", legend=levels(eco), bty="n", pch=21, cex=1, col=bg)
-#legend("bottomright", legend=c("A", "B", "C", "GR2", "GR3", "GR5", "BAR", "SJER", "SPR", "PR", "SH"), col=c(rep("black",3), "#000080", "#8B0000","#0E5E0B","#606060","#5B94BA","#DF1111", "#069710",  "#C9D4D1"), pch=c(16, 15, 17, 16, 16, 16, 16, 16, 16, 16, 16))
+#https://r.qcbs.ca/workshop10/book-en/redundancy-analysis.html
+
+## extract % explained by the first 2 axes
+perc <- round(100*(summary(rda_tree)$cont$importance[2, 1:2]), 2)
+
+## extract scores - these are coordinates in the RDA space
+sc_si <- scores(rda_tree, display="sites", choices=c(1,2), scaling=2)
+sc_sp <- scores(rda_tree, display="species", choices=c(1,2), scaling=2)
+sc_bp <- scores(rda_tree, display="bp", choices=c(1, 2), scaling=2)
+
+## Custom triplot, step by step
+# Extract Land_Coverage_Category and Burn_Severity
+land_cover <- enviro$Land_Coverage_Category
+burn_severity <- enviro$Burn_Severity
+
+# Create colors and shapes based on Land_Coverage_Category and Burn_Severity
+colors <- c("#346648", "#dbb40d")  # Colors for Land_Coverage_Category
+shapes <- c(18, 16, 15, 17)  # Shapes for Burn_Severity
+land_cover_colors <- c("#346648", "#dbb40d") # Custom colors for Land_Coverage_Category
+
+# Set up a blank plot with scaling, axes, and labels
+plot(rda_tree,
+     scaling = 2, # set scaling type 
+     type = "none", # this excludes the plotting of any points from the results
+     frame = FALSE,
+     # set axis limits
+     xlim = c(-1,1), 
+     ylim = c(-1,1),
+     # label the plot (title, and axes)
+     main = "Particulates RDA - scaling 2",
+     xlab = paste0("RDA1 (", perc[1], "%)"), 
+     ylab = paste0("RDA2 (", perc[2], "%)") 
+)
+# add points for site scores
+points(sc_si,
+       pch = shapes[burn_severity],
+       col = land_cover_colors[as.factor(land_cover)],
+       bg = colors[as.factor(land_cover)],
+       cex = 1.2)
+points(sc_sp, 
+       pch = 22, # set shape (here, square with a fill colour)
+       col = "black",
+       bg = "blue", 
+       cex = 1.2)
+# add text labels for species abbreviations
+text(sc_sp + c(0.03, 0.09), # adjust text coordinates to avoid overlap with points
+     labels = rownames(sc_sp), 
+     col = "grey40", 
+     font = 2, # bold
+     cex = 0.6)
+# add arrows for effects of the expanatory variables
+arrows(0,0, # start them from (0,0)
+       sc_bp[,1], sc_bp[,2], # end them at the score value
+       col = "black", 
+       lwd = 1)
+# add text labels for arrows
+text(x = sc_bp[,1] -0.1, # adjust text coordinate to avoid overlap with arrow tip
+     y = sc_bp[,2] - 0.03, 
+     labels = rownames(sc_bp), 
+     col = "black", 
+     cex = 1, 
+     font = 2)
+legend("bottomright", legend=c("Unburned", "Low", "Moderate", "High", "DFF", "SBS"), col=c(rep("black",4), "#346648", "#dbb40d"), pch=c(18, 16, 15, 17, 16, 16))
+
+
+
+#trying above as PCA b/c I want to only predict P in the leachate
+
+pca <- prcomp(data_rda[c('Burn_Duration', 'Char_Max_Temp', 'pH', 'Ortho', 'Mono', 'Di', 'Pyro', 'XANES_Po', 'XANES_Pi_Na', 'XANES_Pi_Ca', 'XANES_Pi_Al', 'XANES_Pi_Mg', 'XANES_Pi_K', 'Solid_P_g_kg', 'Solid_Ca_g_kg', 'Solid_Fe_g_kg', 'Solid_Al_g_kg', 'Solid_K_g_kg', 'Solid_Mg_g_kg', 'Solid_Na_g_kg', 'Solid_S_g_kg', 'Solid_C_g_kg', 'Solid_N_g_kg')], center=TRUE, scale=TRUE)
+
+#samples<-data_rda[ c('Leachate_P_mg_kgchar_part', 'Leachate_Al_mg_kgchar_part', 'Leachate_Ca_mg_kgchar_part', 'Leachate_K_mg_kgchar_part', 'Leachate_Fe_mg_kgchar_part', 'Leachate_Na_mg_kgchar_part', 'Leachate_Mg_mg_kgchar_part')] 
+#create dataframe for independent variables
+#enviro<-data_rda[ c('Land_Coverage_Category', 'Burn_Severity', 'Burn_Duration', 'Char_Max_Temp', 'pH', 'Ortho', 'Mono', 'Di', 'Pyro', 'XANES_Po', 'XANES_Pi_Na', 'XANES_Pi_Ca', 'XANES_Pi_Al', 'XANES_Pi_Mg', 'XANES_Pi_K', 'Solid_P_g_kg', 'Solid_Ca_g_kg', 'Solid_Fe_g_kg', 'Solid_Al_g_kg', 'Solid_K_g_kg', 'Solid_Mg_g_kg', 'Solid_Na_g_kg', 'Solid_S_g_kg', 'Solid_C_g_kg', 'Solid_N_g_kg')]
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(data_rda[c('Burn_Duration', 'Char_Max_Temp', 'pH', 'Ortho', 'Mono', 'Di', 'Pyro', 'XANES_Po', 'XANES_Pi_Na', 'XANES_Pi_Ca', 'XANES_Pi_Al', 'XANES_Pi_Mg', 'XANES_Pi_K', 'Solid_P_g_kg', 'Solid_Ca_g_kg', 'Solid_Fe_g_kg', 'Solid_Al_g_kg', 'Solid_K_g_kg', 'Solid_Mg_g_kg', 'Solid_Na_g_kg', 'Solid_S_g_kg', 'Solid_C_g_kg', 'Solid_N_g_kg')])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+#particulates
+xscale <- 7
+yscale <- 7
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_rda$Burn_Severity, size=data_rda$Leachate_P_mg_kgchar_part, shape=data_rda$Land_Coverage_Category)) +xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Burn Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#611C35", "#E57C04", "#dbb40d", "#346648"))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Particulates")
+
+#leachates
+xscale <- 7
+yscale <- 7
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_rda$Burn_Severity, size=data_rda$Leachate_P_mg_kgchar_filt0.7, shape=data_rda$Land_Coverage_Category)) +xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Burn Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#611C35", "#E57C04", "#dbb40d", "#346648"))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Leachates")
+
+
+
+
+
+#RDA 2: How does solid composition (concentration, xanes, nmr) and burn conditions impact elements in leachates (aqueous)
+#create dataframe for dependent variables
+samples<-data_rda[ c('Leachate_P_mg_kgchar_filt0.7', 'Leachate_Al_mg_kgchar_filt0.7', 'Leachate_Ca_mg_kgchar_filt0.7', 'Leachate_K_mg_kgchar_filt0.7', 'Leachate_Fe_mg_kgchar_filt0.7', 'Leachate_Na_mg_kgchar_filt0.7', 'Leachate_Mg_mg_kgchar_filt0.7')] 
+#create dataframe for independent variables
+enviro<-data_rda[ c('Land_Coverage_Category', 'Burn_Severity', 'Burn_Duration', 'Char_Max_Temp', 'pH', 'Ortho', 'Mono', 'Di', 'Pyro', 'XANES_Po', 'XANES_Pi_Na', 'XANES_Pi_Ca', 'XANES_Pi_Al', 'XANES_Pi_Mg', 'XANES_Pi_K', 'Solid_P_g_kg', 'Solid_Ca_g_kg', 'Solid_Fe_g_kg', 'Solid_Al_g_kg', 'Solid_K_g_kg', 'Solid_Mg_g_kg', 'Solid_Na_g_kg', 'Solid_S_g_kg', 'Solid_C_g_kg', 'Solid_N_g_kg')]
+
+#make sure both dataframes have equal rows
+all.equal(rownames(samples), rownames(enviro))
+
+#RDA (this anaysis expects a linear response of each sample to the environmental variables)
+rda_tree=rda(samples~ . , data=enviro[3:25], scale =TRUE, center = TRUE)
+rda_tree
+RsquareAdj(rda_tree)
+summary(eigenvals(rda_tree, model = "constrained"))
+
+#see the factor loadings (correlations of each variable with each pca axis)
+scores(rda_tree, choices=1:2, display="species", scaling=2)
+
+#check correlation
+pairs.panels(enviro, scale=T)
+
+#can visualize RDA importance
+screeplot(rda_tree)
+
+#check significance of all PCAs
+signif.full <- anova.cca(rda_tree, parallel=getOption("mc.cores")) # default is permutation=999
+signif.full #model is significant
+
+#check significance of individual PCAs
+signif.axis <- anova.cca(rda_tree, by="axis", parallel=getOption("mc.cores"))
+signif.axis 
+
+#check significance of independent variables
+anova.cca(rda_tree, by = "terms")
+
+#compare the model to chance with permutation test
+anova(rda_tree)
+
+#check VIF
+vif.cca(rda_tree) #some VIF too high
+sqrt(vif.cca(rda_tree)) #over 2 is considered high https://pmassicotte.github.io/stats-denmark-2019/07_rda.html#/linear-dependencies-2
+
+#based on VIF, remove Mono, Di, XANES_Pi_Al
+
+#use function to slect the best explantory variables
+install.packages("packfor", repos = "http://R-Forge.R-project.org")
+library(adespatial)
+
+fs <- forward.sel(samples, # Y matrix
+  enviro[3:25], # X matrix
+  adjR2thresh = 0.99, # Set the adj.R2 threshold
+  alpha = 0.5, # Set alpha level
+  nperm = 999  # Number of permutations
+) 
+
+fs
+
+#make a pretty plot
+#https://r.qcbs.ca/workshop10/book-en/redundancy-analysis.html
+
+## extract % explained by the first 2 axes
+perc <- round(100*(summary(rda_tree)$cont$importance[2, 1:2]), 2)
+
+## extract scores - these are coordinates in the RDA space
+sc_si <- scores(rda_tree, display="sites", choices=c(1,2), scaling=2)
+sc_sp <- scores(rda_tree, display="species", choices=c(1,2), scaling=2)
+sc_bp <- scores(rda_tree, display="bp", choices=c(1, 2), scaling=2)
+
+## Custom triplot, step by step
+# Extract Land_Coverage_Category and Burn_Severity
+land_cover <- enviro$Land_Coverage_Category
+burn_severity <- enviro$Burn_Severity
+
+# Create colors and shapes based on Land_Coverage_Category and Burn_Severity
+colors <- c("#346648", "#dbb40d")  # Colors for Land_Coverage_Category
+shapes <- c(18, 16, 15, 17)  # Shapes for Burn_Severity
+land_cover_colors <- c("#346648", "#dbb40d") # Custom colors for Land_Coverage_Category
+
+# Set up a blank plot with scaling, axes, and labels
+plot(rda_tree,
+     scaling = 2, # set scaling type 
+     type = "none", # this excludes the plotting of any points from the results
+     frame = FALSE,
+     # set axis limits
+     xlim = c(-1,1), 
+     ylim = c(-1,1),
+     # label the plot (title, and axes)
+     main = "Leachates RDA - scaling 2",
+     xlab = paste0("RDA1 (", perc[1], "%)"), 
+     ylab = paste0("RDA2 (", perc[2], "%)") 
+)
+# add points for site scores
+points(sc_si,
+       pch = shapes[burn_severity],
+       col = land_cover_colors[as.factor(land_cover)],
+       bg = colors[as.factor(land_cover)],
+       cex = 1.2)
+points(sc_sp, 
+       pch = 22, # set shape (here, square with a fill colour)
+       col = "black",
+       bg = "blue", 
+       cex = 1.2)
+# add text labels for species abbreviations
+text(sc_sp + c(0.03, 0.09), # adjust text coordinates to avoid overlap with points
+     labels = rownames(sc_sp), 
+     col = "grey40", 
+     font = 2, # bold
+     cex = 0.6)
+# add arrows for effects of the expanatory variables
+arrows(0,0, # start them from (0,0)
+       sc_bp[,1], sc_bp[,2], # end them at the score value
+       col = "black", 
+       lwd = 1)
+# add text labels for arrows
+text(x = sc_bp[,1] -0.1, # adjust text coordinate to avoid overlap with arrow tip
+     y = sc_bp[,2] - 0.03, 
+     labels = rownames(sc_bp), 
+     col = "black", 
+     cex = 1, 
+     font = 2)
+legend("bottomright", legend=c("Unburned", "Low", "Moderate", "High", "DFF", "SBS"), col=c(rep("black",4), "#346648", "#dbb40d"), pch=c(18, 16, 15, 17, 16, 16))
 
 
 ```
+
 
 ####stacked spectra and pie charts
 ```{r NMR fig}
