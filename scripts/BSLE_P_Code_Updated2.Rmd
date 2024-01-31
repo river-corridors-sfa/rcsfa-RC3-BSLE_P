@@ -30,7 +30,7 @@ pacman::p_load(tidyverse,
               wesanderson,readxl,openxlsx, stringr, hablar,
               janitor, stringr, naniar, forstringr, reshape2, 
               emmeans, rstatix, ggpubr, Hmisc, corrplot, ggrepel, 
-              stringr, lme4, lmerTest, car, performance, vegan, psych, lavaan, semPlot, semptools)
+              stringr, lme4, lmerTest, car, performance, vegan, psych, lavaan, semPlot, semptools, bestNormalize)
 
 
 ```
@@ -401,6 +401,10 @@ data_solids<-data_solids %>%
   mutate(C.P.MolarRatio=(Solid_C_mg_kg/12.011)/(Solid_P_mg_kg/30.97))%>%
   mutate(N.P.MolarRatio=(Solid_N_mg_kg/14.01)/(Solid_P_mg_kg/30.97))
 
+#NMR Pi and Po
+data_solids<-data_solids %>%
+  mutate(NMR_Pi = Ortho+Pyro) %>%
+  mutate(NMR_Po = Mono + Di)
 
 ```
 
@@ -738,6 +742,7 @@ anova(model,model.int) #sig
 vif(model)
 #model assumptions
 hist(log(data$Leachate_mg_MBD_per_g_P_in_solid_filt0.7))
+plot(lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
 #linearity
 ggqqplot(residuals(model))
 #check normality of residuals 
@@ -2409,7 +2414,174 @@ print(SB.mod.xanes)
 dev.off()
 ```
 
-##XANES example figs
+###NMR and XANES stats
+```{r NMR stats}
+#anova to see how NMR species in the solid char is altered by burn severity and land cover; NMR species separate
+
+#model assumptions assessed for: normality of the residuals with qqplot (x = theoretical quantiles, y = sample quantiles; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/normality.html); homoscedasticity with scale location plot (x=fitted values, y=standardized residuals; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/homoscedasticity.html)
+
+#Ortho
+model<-aov(rank(Ortho)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(rank(data_solids$Ortho))
+ggqqplot(residuals(model))
+plot(aov(rank(Ortho)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(rank(data_solids$Ortho)) #p > 0.05 so can assume normality
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Mono
+model<-aov(log10(Mono+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Mono+1))
+plot(aov(log10(Mono+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+ggqqplot(residuals(model))
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Di
+model<-aov(log10(Di+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Di+1))
+ggqqplot(residuals(model))
+plot(aov(log10(Di+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Di+1)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+#land cover post hoc: 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+
+#Pyro
+model<-aov(log10(Pyro+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Pyro+1))
+ggqqplot(residuals(model))
+plot(aov(log10(Pyro+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Pyro+1)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+#land cover post hoc: 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+
+#Pi
+model<-aov(rank(NMR_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(rank(data_solids$NMR_Pi))
+ggqqplot(residuals(model))
+plot(aov(rank(NMR_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(rank(data_solids$NMR_Pi)) #p < 0.05 so can assume normality
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Po
+model<-aov(log10(NMR_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$NMR_Po+1))
+ggqqplot(residuals(model))
+plot(aov(log10(NMR_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(log10(data_solids$NMR_Po+1)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+```
+
+```{XANES stats}
+#anova to see how NMR species in the solid char is altered by burn severity and land cover; NMR species separate
+
+#model assumptions assessed for: normality of the residuals with qqplot (x = theoretical quantiles, y = sample quantiles; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/normality.html); homoscedasticity with scale location plot (x=fitted values, y=standardized residuals; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/homoscedasticity.html)
+
+#Ca_Pi
+model<-aov(rank(XANES_Pi_Ca)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(rank(data_solids$Ortho))
+ggqqplot(residuals(model))
+plot(aov(rank(XANES_Pi_Ca)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(rank(data_solids$XANES_Pi_Ca)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Mg_Pi
+model<-aov(log10(XANES_Pi_Mg+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(rank(data_solids$Ortho))
+ggqqplot(residuals(model))
+plot(aov(log10(XANES_Pi_Mg+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Pi
+model<-aov(rank(XANES_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(rank(data_solids$XANES_Pi))
+ggqqplot(residuals(model))
+plot(aov(rank(XANES_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check normality of residuals 
+shapiro.test(rank(data_solids$XANES_Pi)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+#Po
+model<-aov(log10(XANES_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$XANES_Po+1))
+ggqqplot(residuals(model))
+plot(aov(log10(XANES_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+```
+
+###XANES example figs
 ```{r example RC spectra fig}
 
 #example stacked RC spectra
@@ -2520,9 +2692,8 @@ leachate_mean <- data %>%
   )
 
 solid <- data_solids %>%
-  select(Parent_ID, Land_Coverage_Category, Burn_Severity, Burn_Duration, Char_Max_Temp, Ortho, Mono, Di, Pyro, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg) %>% #1,3, 5, 10, 11, 31:34, 68:87, 91:100
-  mutate(NMR_Pi = Ortho+Pyro) %>%
-  mutate(NMR_Po = Mono + Di)
+  select(Parent_ID, Land_Coverage_Category, Burn_Severity, Burn_Duration, Char_Max_Temp, Ortho, Mono, Di, Pyro, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg)  #1,3, 5, 10, 11, 31:34, 68:87, 91:100
+  
 
 data_rda<- solid %>%
   full_join(leachate_mean)
