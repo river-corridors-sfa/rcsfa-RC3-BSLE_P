@@ -730,26 +730,19 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(L
 
 
 #MBD mg/g P in char 
-#FIX: need to figure out a different transformation
-model<-lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data) #if want to use maximum likelihood , REML=FALSE
-model.BS<-lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
-model.LC<-lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
-model.int<-lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+model<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data) #if want to use maximum likelihood , REML=FALSE
+model.BS<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
 anova(model,model.BS) #sig
 anova(model,model.LC) #sig
 anova(model,model.int) #sig
 #check VIF
 vif(model)
 #model assumptions
-hist(log(data$Leachate_mg_MBD_per_g_P_in_solid_filt0.7))
-plot(lmer(log(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
-#linearity
+hist(log10(data$Leachate_mg_MBD_per_g_P_in_solid_filt0.7))
 ggqqplot(residuals(model))
-#check normality of residuals 
-shapiro.test(log(data$Leachate_mg_MBD_per_g_P_in_solid_filt0.7)) #p < 0.05 so not normal! FIX
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+plot(lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
 #post hoc tests for interaction term
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
@@ -840,6 +833,8 @@ plot(fitted(model),residuals(model))
 #no post hoc needed b/c not significant
 
 
+
+
 #ICP particulate (>0.7 nominal phase) total P stats; likely use this one for publication
 model<-lmer(log10(Leachate_P_mg_kgchar_part/1000)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
 model.BS<-lmer(log10(Leachate_P_mg_kgchar_part/1000)~Land_Coverage_Category+(1|Parent_ID), data=data)
@@ -867,9 +862,6 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(L
 
 
 
-
-#normalized to P concentration of the solid
-
 #ICP unfiltered total P g/kg stats; likely use this one for publication
 model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
 model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Land_Coverage_Category+(1|Parent_ID), data=data)
@@ -891,7 +883,13 @@ plot(fitted(model),residuals(model))
 performance::check_heteroscedasticity(model) #p < 0.05 so can assume homoscedastic FIX; might be okay based on plot above
 #no post hoc b/c interaction isn't significant
 
-#ICP filtered (<0.7 nominal phase) total P stats; likely use this one for publication
+
+
+
+
+
+#updated with leachable P norm
+#ICP filtered (<0.7 nominal phase) normalized to total P in solid char
 model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
 model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
 model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
@@ -904,15 +902,15 @@ vif(model)
 #model assumptions
 hist(log10(data$Leachate_mg_P_per_g_P_in_solid_filt0.7))
 ggqqplot(residuals(model))
-#check normality of residuals 
-shapiro.test(log10(data$Leachate_mg_P_per_g_P_in_solid_unfilt)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #failed but probably okay based on plot above
-#no post hoc needed b/c not significant
+plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
+#interaction post hoc: 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
 
-
-#ICP particulate (>0.7 nominal phase) total P stats; likely use this one for publication
+#ICP particulates (>0.7 nominal phase) normalized to total P in solid char
 model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
 model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Land_Coverage_Category+(1|Parent_ID), data=data)
 model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity+(1|Parent_ID), data=data)
@@ -923,19 +921,37 @@ anova(model,model.int) #sig
 #check VIF
 vif(model)
 #model assumptions
-hist(log10(data$Leachate_mg_P_per_g_P_in_solid_filt0.7))
+hist(log10(data$Leachate_mg_P_per_g_P_in_solid_part))
 ggqqplot(residuals(model))
-#check normality of residuals 
-shapiro.test(log10(data$Leachate_mg_P_per_g_P_in_solid_filt0.7)) #p < 0.05 so can assume normality FAILED FIX
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
 #interaction post hoc: 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
+
+
+#ICP unfiltered leachate (>0.7 + <0.7 nominal phases) normalized to total P in solid char
+model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS) #sig
+anova(model,model.LC) #sig
+anova(model,model.int) #not sig
+#check VIF
+vif(model)
+#model assumptions
+hist(log10(data$Leachate_mg_P_per_g_P_in_solid_unfilt))
+ggqqplot(residuals(model))
+plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
+#burn severity post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+#land cover post hoc: 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 ```
 
 ####Leachate Figures
@@ -2427,11 +2443,6 @@ summary(model)
 hist(rank(data_solids$Ortho))
 ggqqplot(residuals(model))
 plot(aov(rank(Ortho)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(rank(data_solids$Ortho)) #p > 0.05 so can assume normality
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2440,12 +2451,8 @@ model<-aov(log10(Mono+1)~Burn_Severity*Land_Coverage_Category, data = data_solid
 summary(model)
 #model assumptions
 hist(log10(data_solids$Mono+1))
-plot(aov(log10(Mono+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
 ggqqplot(residuals(model))
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+plot(aov(log10(Mono+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
 #post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2456,11 +2463,6 @@ summary(model)
 hist(log10(data_solids$Di+1))
 ggqqplot(residuals(model))
 plot(aov(log10(Di+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(log10(data_solids$Di+1)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 #land cover post hoc: 
@@ -2475,11 +2477,6 @@ summary(model)
 hist(log10(data_solids$Pyro+1))
 ggqqplot(residuals(model))
 plot(aov(log10(Pyro+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(log10(data_solids$Pyro+1)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 #land cover post hoc: 
@@ -2494,11 +2491,6 @@ summary(model)
 hist(rank(data_solids$NMR_Pi))
 ggqqplot(residuals(model))
 plot(aov(rank(NMR_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(rank(data_solids$NMR_Pi)) #p < 0.05 so can assume normality
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2509,16 +2501,14 @@ summary(model)
 hist(log10(data_solids$NMR_Po+1))
 ggqqplot(residuals(model))
 plot(aov(log10(NMR_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(log10(data_solids$NMR_Po+1)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+
+
 ```
 
-```{XANES stats}
+```{r XANES stats}
 #anova to see how NMR species in the solid char is altered by burn severity and land cover; NMR species separate
 
 #model assumptions assessed for: normality of the residuals with qqplot (x = theoretical quantiles, y = sample quantiles; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/normality.html); homoscedasticity with scale location plot (x=fitted values, y=standardized residuals; https://sscc.wisc.edu/sscc/pubs/RegDiag-R/homoscedasticity.html)
@@ -2530,11 +2520,6 @@ summary(model)
 hist(rank(data_solids$Ortho))
 ggqqplot(residuals(model))
 plot(aov(rank(XANES_Pi_Ca)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(rank(data_solids$XANES_Pi_Ca)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2545,10 +2530,6 @@ summary(model)
 hist(rank(data_solids$Ortho))
 ggqqplot(residuals(model))
 plot(aov(log10(XANES_Pi_Mg+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2559,11 +2540,6 @@ summary(model)
 hist(rank(data_solids$XANES_Pi))
 ggqqplot(residuals(model))
 plot(aov(rank(XANES_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check normality of residuals 
-shapiro.test(rank(data_solids$XANES_Pi)) #p > 0.05 so can assume normality 
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 
@@ -2574,9 +2550,6 @@ summary(model)
 hist(log10(data_solids$XANES_Po+1))
 ggqqplot(residuals(model))
 plot(aov(log10(XANES_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
-#check homogeneity of variance assumption (homoscedastcity)
-plot(fitted(model),residuals(model))
-performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 ```
@@ -2684,22 +2657,22 @@ dev.off()
 leachate_mean <- data %>%
   dplyr::group_by(Parent_ID) %>%
   dplyr::summarize(
-    Leachate_P_mg_kgchar_unfilt_Mean = mean(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE),
-    Leachate_P_mg_kgchar_part_Mean = mean(Leachate_P_mg_kgchar_part, na.rm = TRUE),
-    Leachate_P_mg_kgchar_filt0.7_Mean = mean(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
-    Leachate_MBD_mg_kgchar_filt0.7_Mean = mean(Leachate_MBD_mg_kgchar_filt0.7, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean = mean(Leachate_mg_P_per_g_P_in_solid_unfilt, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_part_Mean = mean(Leachate_mg_P_per_g_P_in_solid_part, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_P_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_MBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
     pH_Mean = mean(pH)
   )
 
 solid <- data_solids %>%
-  select(Parent_ID, Land_Coverage_Category, Burn_Severity, Burn_Duration, Char_Max_Temp, Ortho, Mono, Di, Pyro, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg)  #1,3, 5, 10, 11, 31:34, 68:87, 91:100
+  select(Parent_ID, Land_Coverage_Category, Burn_Severity, Burn_Duration, Char_Max_Temp, Ortho, Mono, Di, Pyro, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg)
   
 
 data_rda<- solid %>%
   full_join(leachate_mean)
 
 #normalize data
-data_rda_sub<-as.data.frame(scale(data_rda[4:46]))
+data_rda_sub<-as.data.frame(scale(data_rda[4:44]))
 
 data_rda_combine<-cbind(data_rda[,c(1:3)], data_rda_sub)
 
@@ -2720,7 +2693,453 @@ data_rda_combine$Land_Coverage_Category=as.numeric(factor(data_rda_combine$Land_
 DFF_data_rda_combine<-subset(data_rda_combine, Land_Coverage_Category=="1")
 SBS_data_rda_combine<-subset(data_rda_combine, Land_Coverage_Category=="2")
 
+#both ecosystems together
+#running only the Ca-Pi model
+#unfiltered
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~~ Leachate_mg_P_per_g_P_in_solid_unfilt_Mean
+'
 
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#filtered <0.7 um
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#particulates
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~~ Leachate_mg_P_per_g_P_in_solid_part_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#molybdate
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+
+
+#split up by ecosystem and rerun the same models as above
+#DFF
+#unfiltered
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~~ Leachate_mg_P_per_g_P_in_solid_unfilt_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = DFF_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#filtered <0.7 um
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = DFF_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#particulates
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~~ Leachate_mg_P_per_g_P_in_solid_part_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = DFF_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#molybdate
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = DFF_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#SBS
+#unfiltered
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~~ Leachate_mg_P_per_g_P_in_solid_unfilt_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = SBS_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#filtered <0.7 um
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = SBS_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#particulates
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~~ Leachate_mg_P_per_g_P_in_solid_part_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = SBS_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+#molybdate
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = SBS_data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+
+
+
+
+
+
+
+
+#old code below here
 
 
 #SEMs for total P mobilization (unfiltered)
@@ -2729,7 +3148,7 @@ model <- '
   # Structural Model
     Solid_P_g_kg ~ Burn_Severity
     XANES_Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_unfilt_Mean ~ XANES_Pi + Solid_P_g_kg
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~ XANES_Pi + Solid_P_g_kg
     
   # Residual Variances
     Solid_P_g_kg~~Solid_P_g_kg
