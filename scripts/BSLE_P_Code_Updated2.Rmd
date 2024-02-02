@@ -566,6 +566,8 @@ summary_bs <- data_solids %>%
   dplyr::summarize(
     Temp_Mean = mean(Char_Max_Temp, na.rm = TRUE),
     Temp_Standard_Deviation = sd(Char_Max_Temp, na.rm = TRUE),
+    Temp_Min = min(Char_Max_Temp, na.rm = TRUE),
+    Temp_Max = max(Char_Max_Temp, na.rm = TRUE),
     Duration_Mean = mean(Burn_Duration, na.rm = TRUE),
     Duration_Standard_Deviation = sd(Burn_Duration, na.rm = TRUE),
     Count = n()
@@ -676,13 +678,15 @@ write.csv(data_solids, "../data/data_solids.csv") #save this for individual info
 P.Conc.leach<- data %>%
   dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
   dplyr::summarize(
-    Leachate_P_mg_kgchar_part_Mean = mean(Leachate_P_mg_kgchar_part, na.rm = TRUE),
-    Leachate_P_mg_kgchar_part_Standard_Deviation = sd(Leachate_P_mg_kgchar_part, na.rm = TRUE),
-    Count = n(),
-    Leachate_P_mg_kgchar_filt0.7_Mean = mean(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
-    Leachate_P_mg_kgchar_filt0.7_Standard_Deviation = sd(Leachate_P_mg_kgchar_filt0.7, na.rm = TRUE),
-    Leachate_P_mg_kgchar_unfilt_Mean = mean(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE),
-    Leachate_P_mg_kgchar_unfilt_Standard_Deviation = sd(Leachate_P_mg_kgchar_unfilt, na.rm = TRUE)
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean = mean(Leachate_mg_P_per_g_P_in_solid_unfilt, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Standard_Deviation = sd(Leachate_mg_P_per_g_P_in_solid_unfilt, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_P_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Standard_Deviation = sd(Leachate_mg_P_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_part_Mean = mean(Leachate_mg_P_per_g_P_in_solid_part, na.rm = TRUE),
+    Leachate_mg_P_per_g_P_in_solid_part_Standard_Deviation = sd(Leachate_mg_P_per_g_P_in_solid_part, na.rm = TRUE),
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_MBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Standard_Deviation = sd(Leachate_mg_MBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Count = n()
   )
 
 write.csv(P.Conc.leach, "../data/summary_leachate_conc.csv") #save this for a table
@@ -3133,16 +3137,7 @@ plot(p_pa2)
 cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
 
 
-
-
-
-
-
-
-#old code below here
-
-
-#SEMs for total P mobilization (unfiltered)
+#OTHER OPTIONS FOR MODEL SETUPS
 #Model 1: chemistry = XANES Pi
 model <- '
   # Structural Model
@@ -3155,28 +3150,6 @@ model <- '
     XANES_Pi ~~ XANES_Pi
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
 
 #Model 2: chemistry = XANES Po
 model <- '
@@ -3191,29 +3164,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM2.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 #Model 3A: chemistry = XANES Pi_Ca
 model <- '
   # Structural Model
@@ -3226,29 +3176,6 @@ model <- '
     XANES_Pi_Ca ~~ XANES_Pi_Ca
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM3.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
 
 #Model 3: chemistry = XANES Pi_Mg + Pi_Ca
 model <- '
@@ -3267,29 +3194,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM4.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 #Model 4: chemistry = XANES Mg + Ca
 model <- '
   # Measurement Model; set up the latent variable(s)
@@ -3307,29 +3211,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM5.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 #Model 5: chemistry = NMR Pi
 model <- '
   # Structural Model
@@ -3342,29 +3223,6 @@ model <- '
     NMR_Pi ~~ NMR_Pi
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM6.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
 
 #Model 6: chemistry = NMR Po
 model <- '
@@ -3379,29 +3237,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM7.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 #Model 7: chemistry = NMR monoesters
 model <- '
   # Structural Model
@@ -3415,29 +3250,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM8.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 #Model 8: chemistry = NMR diesters
 model <- '
   # Structural Model
@@ -3450,30 +3262,6 @@ model <- '
     Di ~~ Di
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM9.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
 
 #Model 9: chemistry = NMR Mono + NMR Di
 model <- '
@@ -3492,1152 +3280,7 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM10.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#SEMs for P mobilization in particulate phase (Leachate_P_mg_kgchar_part_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM11.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM12.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM13.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM14.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM15.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM16.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM17.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM18.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM19.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Leachate_P_mg_kgchar_part_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM20.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-
-#SEM for P mobilization in aqueous phase (Leachate_P_mg_kgchar_filt0.7_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM21.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM22.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM23.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM24.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM25.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM26.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM27.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM28.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM29.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM30.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-
-#SEM for MBD P mobilization (Leachate_MBD_mg_kgchar_filt0.7_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM31.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM32.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM33.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM34.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM35.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM36.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM37.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM38.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM39.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-cowplot::save_plot("../figures/SEM40.pdf", p_pa2, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
-
-
-#alternative plot option
+#alternative plot options
 
 semPlot::semPaths(fit, what = "path", whatLabels = "std", style = "lisrel", edge.label.cex = 1, rotation = 2, curve = 2, layoutSplit = FALSE, normalize = FALSE, height = 9, width = 6.5, residScale = 10, edge.label.color = "black")
 
@@ -4653,7 +3296,159 @@ semPaths(object = fit, what = "std", sizeMan = 10,sizeLat = 10,sizeInt = 10, edg
 ```
 
 ```{r BS and Ecosystem models}
-#SEMs for total P mobilization (unfiltered)
+#Model: chemistry = XANES Pi_Ca only
+
+#unfiltered
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~~ Leachate_mg_P_per_g_P_in_solid_unfilt_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+
+#filtered <0.7 nominal pore size
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+
+#particulate (>0.7um nominal pore size)
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~~ Leachate_mg_P_per_g_P_in_solid_part_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+
+#molybdate (<0.7um nominal pore size)
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+
+
+
+#other SEM setup options
 #Model 1: chemistry = XANES Pi
 model <- '
   # Structural Model
@@ -4669,28 +3464,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 #Model 2: chemistry = XANES Po
 model <- '
   # Structural Model
@@ -4705,65 +3478,6 @@ model <- '
     XANES_Po ~~ XANES_Po
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg  
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
 
 #Model 3: chemistry = XANES Pi_Mg + Pi_Ca
 model <- '
@@ -4784,28 +3498,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 #Model 4: chemistry = XANES Mg + Ca
 model <- '
   # Measurement Model; set up the latent variable(s)
@@ -4825,28 +3517,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 #Model 5: chemistry = NMR Pi
 model <- '
   # Structural Model
@@ -4861,28 +3531,6 @@ model <- '
     NMR_Pi ~~ NMR_Pi
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
 
 #Model 6: chemistry = NMR Po
 model <- '
@@ -4899,28 +3547,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 #Model 7: chemistry = NMR monoesters
 model <- '
   # Structural Model
@@ -4936,28 +3562,6 @@ model <- '
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
 
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 #Model 8: chemistry = NMR diesters
 model <- '
   # Structural Model
@@ -4972,29 +3576,6 @@ model <- '
     Di ~~ Di
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
 
 #Model 9: chemistry = NMR Mono + NMR Di
 model <- '
@@ -5014,1330 +3595,6 @@ model <- '
     Di ~~ Di
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#SEMs for P mobilization in particulate phase (Leachate_P_mg_kgchar_part_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Po ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Po ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Mono ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-semPlot::semPaths(fit, what = "path", whatLabels = "std", style = "lisrel", edge.label.cex = 1, rotation = 2, curve = 2, layoutSplit = FALSE, normalize = FALSE, height = 9, width = 6.5, residScale = 10, edge.label.color = "black")
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Di ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    P ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-#SEM for P mobilization in aqueous phase (Leachate_P_mg_kgchar_filt0.7_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Po ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Pi ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Po ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Mono ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Di ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    P ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-#SEM for MBD P mobilization (Leachate_MBD_mg_kgchar_filt0.7_Mean)
-#Model 1: chemistry = XANES Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi ~~ XANES_Pi
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 2: chemistry = XANES Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Po ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Po ~~ XANES_Po
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 3: chemistry = XANES Pi_Mg + Pi_Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Pi_Ca + XANES_Pi_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    XANES_Pi_Mg ~~ XANES_Pi_Mg
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 4: chemistry = XANES Mg + Ca
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    Pi =~ XANES_Ca + XANES_Mg
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Pi ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Ca ~~ XANES_Ca
-    XANES_Mg ~~ XANES_Mg
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 5: chemistry = NMR Pi
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Pi ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Pi ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ NMR_Pi + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Pi ~~ NMR_Pi
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 6: chemistry = NMR Po
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    NMR_Po ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    NMR_Po ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ NMR_Po + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    NMR_Po ~~ NMR_Po
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 7: chemistry = NMR monoesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Mono ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Mono ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Mono + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#Model 8: chemistry = NMR diesters
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    Di ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    Di ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ Di + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Di ~~ Di
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-#Model 9: chemistry = NMR Mono + NMR Di
-model <- '
-  # Measurement Model; set up the latent variable(s)
-    P =~ Mono + Di
-  
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    P ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    P ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ P + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    Mono ~~ Mono
-    Di ~~ Di
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-
-#these have LCC
-#unfiltered
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_unfilt_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#particulate
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_part_Mean ~~ Leachate_P_mg_kgchar_part_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-#aqueous
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_P_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_P_mg_kgchar_filt0.7_Mean ~~ Leachate_P_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-#aqueous MBD
-#Model 3A: chemistry = XANES Pi_Ca
-model <- '
-  # Structural Model
-    Solid_P_g_kg ~ Burn_Severity
-    XANES_Pi_Ca ~ Burn_Severity
-    Solid_P_g_kg ~ Land_Coverage_Category
-    XANES_Pi_Ca ~ Land_Coverage_Category
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
-    
-  # Residual Variances
-    Solid_P_g_kg~~Solid_P_g_kg    
-    XANES_Pi_Ca ~~ XANES_Pi_Ca
-    Leachate_MBD_mg_kgchar_filt0.7_Mean ~~ Leachate_MBD_mg_kgchar_filt0.7_Mean
-'
-
-# Fit the SEM model
-fit <- sem(model, data = data_rda_combine)
-#fit<-cfa(model, data = data_rda_combine)
-
-# Summarize the results
-summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
-fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
-
-#visualize it
-#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
-#nodeLabels = labels,
-p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
-         label.prop=0.9, rotation = 1, nCharNodes=0,
-         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
-         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
-         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
-         curve=2, residuals = FALSE, layout="tree2",
-         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
-         node.width = 4)
-p_pa2 <- mark_sig(p_pa, fit)
-plot(p_pa2)
-
-
-
-
 ```
 
 
