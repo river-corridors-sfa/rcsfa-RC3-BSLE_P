@@ -859,7 +859,7 @@ plot(fitted(model),residuals(model))
 performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #interaction post hoc: 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
@@ -909,7 +909,7 @@ ggqqplot(residuals(model))
 plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
 #interaction post hoc: 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
@@ -953,9 +953,7 @@ plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_unfilt)~Burn_Severity*Land_Covera
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 #land cover post hoc: 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category,adjust="tukey") #won't run b/c no high sagebrush
 ```
 
 ####Leachate Figures
@@ -1038,7 +1036,7 @@ plot(fitted(model),residuals(model))
 performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 #interaction post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
@@ -2470,9 +2468,7 @@ plot(aov(log10(Di+1)~Burn_Severity*Land_Coverage_Category, data = data_solids))
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 #land cover post hoc: 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category,adjust="tukey") 
 
 #Pyro
 model<-aov(log10(Pyro+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
@@ -2484,9 +2480,7 @@ plot(aov(log10(Pyro+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
 #burn severity post hoc: 
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 #land cover post hoc: 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") #between 
-emmeans::emmeans(model, pairwise~Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Land_Coverage_Category,adjust="tukey") 
 
 #Pi
 model<-aov(rank(NMR_Pi)~Burn_Severity*Land_Coverage_Category, data = data_solids)
