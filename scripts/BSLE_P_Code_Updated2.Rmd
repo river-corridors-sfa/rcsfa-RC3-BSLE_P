@@ -999,6 +999,24 @@ leach.fig$variable=factor(leach.fig$variable, levels= c("Total", "Particulate", 
 leach.Pnorm.conc<-ggplot(leach.fig, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(mg~leachable~P~g~P~char^-1, sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("gray", "gray"))+facet_grid(variable~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))
 
 cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
+
+#normalized by concentration of solid char; removed total P
+leach.fig<-data %>%
+  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)
+
+leach.fig<-melt(leach.fig, id =c("Burn_Severity", "Land_Coverage_Category"))
+
+leach.fig<-leach.fig %>%
+  mutate(variable = case_when(
+    variable == "Leachate_mg_P_per_g_P_in_solid_part" ~"Particulate Total",
+    variable == "Leachate_mg_P_per_g_P_in_solid_filt0.7" ~ "Aqueous Total",
+    variable == "Leachate_mg_MBD_per_g_P_in_solid_filt0.7" ~ "Aqueous Molybdate Reactive"))
+  
+leach.fig$variable=factor(leach.fig$variable, levels= c("Particulate Total", "Aqueous Total", "Aqueous Molybdate Reactive"))
+
+leach.Pnorm.conc<-ggplot(leach.fig, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Leachable~P~(mg~g^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("gray", "gray"))+facet_grid(variable~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90))
+
+cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
 ```
 
 ```{r aqueous P, pH, and BS}
@@ -2155,6 +2173,72 @@ legend("bottomright", legend=c("Unburned", "Low", "Moderate", "High", "DFF", "SB
 
 ```
 
+```{r nmds}
+#https://rpubs.com/CPEL/NMDS
+#https://jonlefcheck.net/2012/10/24/nmds-tutorial-in-r/
+
+#stress below 0.05 is a good fit
+
+
+, XANES_Po, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg
+
+#NMR
+solid <- data_solids %>%
+  select(Ortho, Mono, Di, Pyro) 
+
+#create dataframe for independent variables
+enviro<-data_solids[c('Land_Coverage_Category', 'Burn_Severity')]
+
+
+###no distance matrix, no march, GW only
+ 
+NMR_NMS_4 <-
+  metaMDS(solid,
+          distance = "bray",
+          k = 3,
+          maxit = 999, 
+          trymax = 500,
+          wascores = TRUE)
+#Run 20 stress 0.02990506 
+#... Procrustes: rmse 0.003900023  max resid 0.01001928 
+goodness(NMR_NMS_4)
+stressplot(NMR_NMS_4)
+
+NMRenv1 <- envfit(NMR_NMS_4, enviro, permu = 999)
+ 
+NMR_NMS_4 %>% ordiplot(type='none') %>% points("sites") %>% ordiellipse(groups=enviro$Burn_Severity, col=c("#999933","#d7191c","#abdda4","blue") )
+plot(NMRenv1, p.max = 0.05)
+
+
+#XANES
+solid <- data_solids %>%
+  select(XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po) 
+
+#create dataframe for independent variables
+enviro<-data_solids[c('Land_Coverage_Category', 'Burn_Severity')]
+
+
+###no distance matrix, no march, GW only
+ 
+NMR_NMS_4 <-
+  metaMDS(solid,
+          distance = "bray",
+          k = 3,
+          maxit = 999, 
+          trymax = 500,
+          wascores = TRUE)
+#Run 20 stress 0.02990506 
+#... Procrustes: rmse 0.003900023  max resid 0.01001928 
+goodness(NMR_NMS_4)
+stressplot(NMR_NMS_4)
+ 
+NMRenv1 <- envfit(NMR_NMS_4, enviro, permu = 999)
+ 
+NMR_NMS_4 %>% ordiplot(type='none') %>% points("sites") %>% ordiellipse(groups=enviro$Burn_Severity, col=c("#999933","#d7191c","#abdda4","blue") )
+plot(NMRenv1, p.max = 0.05)
+
+```
+
 
 ####stacked spectra and pie charts
 ```{r NMR fig}
@@ -3305,6 +3389,9 @@ model <- '
     Solid_P_g_kg~~Solid_P_g_kg  
     XANES_Pi_Ca ~~ XANES_Pi_Ca
     Leachate_mg_P_per_g_P_in_solid_unfilt_Mean ~~ Leachate_mg_P_per_g_P_in_solid_unfilt_Mean
+    
+  #covariance
+    Burn_Severity~~Land_Coverage_Category
 '
 
 # Fit the SEM model
@@ -3589,6 +3676,53 @@ model <- '
     Di ~~ Di
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
+```
+
+##Cluster
+```{r cluster analysis}
+#solid NMR and XANES species
+#https://uc-r.github.io/kmeans_clustering
+
+
+Burn_Duration, Char_Max_Temp, XANES_Pi, XANES_Fe, XANES_Na, XANES_Ca, XANES_Al, XANES_Mg, XANES_K, XANES_Po_Fe, XANES_Po_Na, XANES_Po_Ca, XANES_Po_Al, XANES_Po_Mg, XANES_Po_K, Solid_P_g_kg, Solid_Ca_g_kg, Solid_Fe_g_kg, Solid_Al_g_kg, Solid_K_g_kg, Solid_Mg_g_kg, Solid_Na_g_kg, Solid_S_g_kg, Solid_C_g_kg, Solid_N_g_kg
+
+ Ortho, Mono, Di, Pyro, 
+
+solid <- data_solids %>%
+  select(Parent_ID, Land_Coverage_Category, Burn_Severity, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K, XANES_Po) %>%
+  unite(Treatment, Parent_ID, Land_Coverage_Category, Burn_Severity) %>%
+  column_to_rownames("Treatment") %>%
+  scale(center = TRUE, scale = TRUE) 
+
+
+#K means
+#figure out the best number of clusters:
+factoextra::fviz_nbclust(solid, kmeans, method = "wss")
+factoextra::fviz_nbclust(solid, kmeans, method = "silhouette")
+gap_stat <- cluster::clusGap(solid, FUN = kmeans, nstart = 25,
+                    K.max = 10, B = 100)
+factoextra::fviz_gap_stat(gap_stat)
+
+#Try 6
+k6 <- kmeans(solid, centers = 3, nstart = 25)
+
+k3 <- kmeans(dist_stats, centers = 3, nstart = 25)
+
+#cluster numbers will change each time you run this, so just verify these are the right clusters before applying colors 
+factoextra::fviz_cluster(k6, data = solid, ggtheme = theme_classic(), ellipse.type = "confidence", show.clust.cent = FALSE)
+
+```
+
+```{r dendro}
+dendro = factoextra::get_dist(solid, method ="spearman")
+factoextra::fviz_dist(dendro, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+
+cluster_matrix = hclust(dendro)
+
+plot(cluster_matrix)
+ggdendro::ggdendrogram(cluster_matrix, rotate= TRUE)
+
 ```
 
 
