@@ -371,6 +371,21 @@ XANES_clean<- Meta %>%
 data_solids<-data_solids %>%
   mutate(NMR_EE_P_perc=Total_Extractable_P_mg_per_kg/Solid_P_mg_kg*100)
 
+#calculate monoester:diester ratio
+data_solids<-data_solids %>%
+  mutate(M_D_ratio=Mono/Di)
+
+#percent change based on average percent monoester and diester in the unburned
+data_solids <- data_solids %>%
+  mutate(mono_per_change = case_when(
+    Land_Coverage_Category == "Sagebrush shrubland" ~ ((Mono - 27)/27)*100,
+    Land_Coverage_Category == "Douglas-fir forest" ~ ((Mono - 3.2)/3.2)*100))
+
+data_solids <- data_solids %>%
+  mutate(di_per_change = case_when(
+    Land_Coverage_Category == "Sagebrush shrubland" ~ ((Di - 26.9)/26.9)*100,
+    Land_Coverage_Category == "Douglas-fir forest" ~ ((Di - 38.3)/38.3)*100))
+
 #convert C and N of solids from percent to mg/kg in data_solids dataframe
 data_solids<-data_solids %>%
   mutate(Solid_C_mg_kg = (C_weight_per*10000),
@@ -615,6 +630,8 @@ summary_solids_conc <- data_solids %>%
     Di_Standard_Deviation = sd(Di, na.rm = TRUE),
     Pyro_Mean = mean(Pyro, na.rm = TRUE),
     Pyro_Standard_Deviation = sd(Pyro, na.rm = TRUE),
+    M_D_Mean = mean(M_D_ratio, na.rm = TRUE),
+    M_D_Standard_Deviation = sd(M_D_ratio, na.rm = TRUE),
     XANES_Po_Mean = mean(XANES_Po, na.rm = TRUE),
     XANES_Po_Standard_Deviation = sd(XANES_Po, na.rm = TRUE),
     XANES_Pi_Mean = mean(XANES_Pi, na.rm = TRUE),
@@ -983,7 +1000,9 @@ cowplot::save_plot("../figures/leach.charnorm.conc.pdf", leach.charnorm.conc, nc
 
 #normalized by concentration of solid char
 leach.fig<-data %>%
-  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_unfilt, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)
+  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_unfilt, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)%>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 
 leach.fig<-melt(leach.fig, id =c("Burn_Severity", "Land_Coverage_Category"))
 
@@ -1000,9 +1019,11 @@ leach.Pnorm.conc<-ggplot(leach.fig, aes(x=Burn_Severity, y=value, fill=Land_Cove
 
 cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
 
-#normalized by concentration of solid char; removed total P
+#normalized by concentration of solid char; removed total P; used this
 leach.fig<-data %>%
-  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)
+  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)%>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 
 leach.fig<-melt(leach.fig, id =c("Burn_Severity", "Land_Coverage_Category"))
 
@@ -1019,27 +1040,94 @@ leach.Pnorm.conc<-ggplot(leach.fig, aes(x=Burn_Severity, y=value, fill=Land_Cove
 cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
 ```
 
-```{r aqueous P, pH, and BS}
+####pH
+```{r aqueous P}
+data<-data %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 
 #figure to see relationship between P in aqueous fraction and pH
-aq_pH<-ggplot(data, aes(x=pH, y=Leachate_P_mg_kgchar_filt0.7, color=Burn_Severity))+geom_point() + geom_smooth(method = "lm", se = FALSE, na.rm = TRUE, fullrange = TRUE, aes(group=1), color = "black") +theme_classic()+ylab(expression(paste(Aqueous~P~(mg~g^-1), sep="")))+ xlab("pH")+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))+scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))
+aq_pH<-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=Burn_Severity))+geom_point() + geom_smooth(method = "lm", se = FALSE, na.rm = TRUE, fullrange = TRUE, aes(group=1), color = "black") +theme_classic()+ylab(expression(paste(Aqueous~P~(mg~g^-1), sep="")))+ xlab("pH")+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))+scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))
 
 cowplot::save_plot("../figures/aq_pH.pdf", aq_pH, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
 
+#Anova to see relationship between aqueous P concentration and pH for each ecosystem type separately
+#sagebrush shrubland
+model<-lm(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~pH, data = subset(data, Land_Coverage_Category == "Sagebrush shrubland"))
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Solid_P_mg_kg)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 
+#Douglas-fir forest
+model<-lm(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~pH, data = subset(data, Land_Coverage_Category == "Douglas-fir forest"))
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Solid_P_mg_kg)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+
+```
+
+```{r pH and BS}
 #figure of pH and burn severity
-pH_BS<-ggplot(data, aes(x=Burn_Severity, y=pH, fill=Burn_Severity))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))
+pH_BS<-ggplot(data, aes(x=Burn_Severity, y=pH, fill=Burn_Severity))+geom_boxplot()+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))
 
 cowplot::save_plot("../figures/pH_BS.pdf", pH_BS, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
+
+#stats to see relationship of pH with burn severity and ecosystem type 
+
+
+model<-lmer(log10(pH)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log10(pH)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log10(pH)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log10(pH)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS)
+anova(model,model.LC)
+anova(model,model.int)
+#check VIF
+vif(model)
+#model assumptions
+hist(log10(data$pH))
+#linearity
+ggqqplot(residuals(model))
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+#post hoc tests 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey")
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
 ```
 
 
 
 ####Solid ICP
 ```{r solid fig and stats}
+data_solids$Burn_Severity=factor(data_solids$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+data_solids <-data_solids %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
+
+
 solid.P.BS.fig<-ggplot(data_solids, aes(x=Burn_Severity, y=Solid_P_mg_kg, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
 
-cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=72)
+cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
+
+solid.P.BS.fig<-ggplot(data_solids, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("gray", "gray"))+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90))
+
+cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 1.25:1, dpi=100)
 
 #ICP solid total P stats; likely use this one for publication
 model<-aov(log10(Solid_P_mg_kg)~Burn_Severity*Land_Coverage_Category, data = data_solids)
@@ -1058,6 +1146,30 @@ emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(B
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
+
+#carbon
+model<-aov(log10(Solid_C_mg_kg)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_C_mg_kg))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Solid_C_mg_kg)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+
+#nitrogen
+model<-aov(log10(Solid_N_mg_kg)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_N_mg_kg))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(data_solids$Solid_C_mg_kg)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 ```
 
 
@@ -1258,84 +1370,37 @@ ggplot(stoich_mean, aes(x = Burn_Severity, y = value_mean, fill = variable)) +
   labs(x = "Burn Severity",
        y = "Molar Ratio (Element:P)") + facet_grid(filter~Land_Coverage_Category, scales = "free")+ theme_classic() + scale_fill_manual(values = c("#332188", "#117633", "#43a999", "#88cced", "gray", "#ddcb77", "#cc6677", "#aa4499", "#882255"))
 
+#is C:P or N:P influenced by burn severity or land cover?
+stoich.stat.C<-subset(stoich, variable=="C:P" & filter=="Solid")
+stoich.stat.N<-subset(stoich, variable=="N:P" & filter=="Solid")
 
-#old code below
-#summarize data (by land cover, burn severity, and filter) to get mean and standard deviation
-stoich_mean <- stoich %>%
-  dplyr::group_by(Burn_Severity, Land_Coverage_Category, filter) %>%
-  dplyr::summarize(
-    Ca_P_Mean = mean(Ca_P, na.rm = TRUE),
-    Mg_P_Mean = mean(Mg_P, na.rm = TRUE),
-    Fe_P_Mean = mean(Fe_P, na.rm = TRUE),
-    Al_P_Mean = mean(Al_P, na.rm = TRUE),
-    Na_P_Mean = mean(Na_P, na.rm = TRUE),
-    K_P_Mean = mean(K_P, na.rm = TRUE),
-    S_P_Mean = mean(S_P, na.rm = TRUE),
-    C_P_Mean = mean(C_P, na.rm = TRUE),
-    N_P_Mean = mean(N_P, na.rm = TRUE),
-    Ca_P_sd = sd(Ca_P, na.rm = TRUE),
-    Mg_P_sd = sd(Mg_P, na.rm = TRUE),
-    Fe_P_sd = sd(Fe_P, na.rm = TRUE),
-    Al_P_sd = sd(Al_P, na.rm = TRUE),
-    Na_P_sd = sd(Na_P, na.rm = TRUE),
-    K_P_sd = sd(K_P, na.rm = TRUE),
-    S_P_sd = sd(S_P, na.rm = TRUE),
-    C_P_sd = sd(C_P, na.rm = TRUE),
-    N_P_sd = sd(N_P, na.rm = TRUE))
+model<-aov(log10(value)~Burn_Severity*Land_Coverage_Category, data = stoich.stat.C)
+summary(model)
+#model assumptions
+hist(stoich.stat.C$value)
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(stoich.stat.C$value)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
 
-
-ggplot(stoich_mean, aes(x = Burn_Severity)) +
-  geom_bar(aes(y = Ca_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.2) +
-  geom_bar(aes(y = Mg_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.4) +
-  geom_bar(aes(y = Fe_P_Mean), stat = "identity", position = "dodge", color = "black", width = 0.6) +
-  geom_errorbar(aes(ymin = Ca_P_Mean - Ca_P_sd, ymax = Ca_P_Mean + Ca_P_sd),
-                position = position_dodge(width = 0.2),
-                width = 0.1) +
-  geom_errorbar(aes(ymin = Mg_P_Mean - Mg_P_sd, ymax = Mg_P_Mean + Mg_P_sd),
-                position = position_dodge(width = 0.4),
-                width = 0.1) +
-  geom_errorbar(aes(ymin = Fe_P_Mean - Fe_P_sd, ymax = Fe_P_Mean + Fe_P_sd),
-                position = position_dodge(width = 0.6),
-                width = 0.1) +
-  labs(title = "Burn Severity vs. Mean with Error Bars",
-       x = "Burn Severity",
-       y = "Mean") +
-  scale_fill_manual(values = c("Aqueous" = "red", "Particulate" = "blue", "Solid" = "green")) +
-  theme_classic()+ facet_grid(filter~Land_Coverage_Category, scales = "free")
-  
-ggplot(stoich_mean, aes(x = Burn_Severity)) +
-  geom_bar(aes(y = Ca_P_Mean, fill = "red"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
-  geom_bar(aes(y = Mg_P_Mean, fill = "blue"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
-  geom_bar(aes(y = Fe_P_Mean, fill = "green"), stat = "identity", position = position_dodge(width = 0.4), color = "black", width = 0.3) +
-  geom_errorbar(aes(ymin = Ca_P_Mean - Ca_P_sd, ymax = Ca_P_Mean + Ca_P_sd),
-                position = position_dodge(width = 0.4),
-                width = 0.2) +
-  geom_errorbar(aes(ymin = Mg_P_Mean - Mg_P_sd, ymax = Mg_P_Mean + Mg_P_sd),
-                position = position_dodge(width = 0.4),
-                width = 0.2) +
-  geom_errorbar(aes(ymin = Fe_P_Mean - Fe_P_sd, ymax = Fe_P_Mean + Fe_P_sd),
-                position = position_dodge(width = 0.4),
-                width = 0.2) +
-  labs(title = "Burn Severity vs. Mean with Error Bars",
-       x = "Burn Severity",
-       y = "Mean") +
-  scale_fill_manual(values = c("red", "blue", "green")) +
-  theme_minimal() + facet_grid(filter ~ Land_Coverage_Category, scales = "free")
-
-
-#bar chart with phase as facet; different colored bars for the stoichiometry
-stoich_mean<-melt(stoich_mean, id=c("Burn_Severity", "Land_Coverage_Category", "filter"))
-
-
-
-ggplot(stoich_mean, aes(x = Burn_Severity, y = value, fill = variable)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(x = "Burn Severity",
-       y = "Stoichiometry") + facet_grid(filter~Land_Coverage_Category, scales = "free")+ theme_classic()
-  scale_fill_manual(values = c("red", "blue", "green"))
-
-
-herehere
+model<-aov(log10(value)~Burn_Severity*Land_Coverage_Category, data = stoich.stat.N)
+summary(model)
+#model assumptions
+hist(stoich.stat.N$value)
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(stoich.stat.N$value)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#interaction post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
 ```
 
 
@@ -1446,6 +1511,36 @@ yscale <- 4
 ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=XANES_corr$Land_Coverage_Category,shape=XANES_corr$Burn_Severity),size=5)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - Solid")
 ```
 
+```{r PCA NMR}
+solid <- data_solids %>%
+  select(Land_Coverage_Category, Burn_Severity, Ortho, Mono, Di, Pyro) 
+
+pca <- prcomp(solid[3:6], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(solid[3:6])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 4
+yscale <- 4
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=solid$Land_Coverage_Category,shape=solid$Burn_Severity),size=5)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - Solid")
+
+
+
+```
+
+
 ```{r PCA NMR and XANES}
 #FIX THIS NO LONGER RUNS
 leachate <- data %>%
@@ -1516,7 +1611,7 @@ percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%",
 
 xscale <- 6
 yscale <- 6
-burn_conditions_pca<-ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_rda$Burn_Severity),size=5) +xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Burn Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#611C35", "#E57C04", "#dbb40d", "#346648"))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)
+burn_conditions_pca<-ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_rda$Burn_Severity),size=5) +xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Burn Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#9d0208", "#e85d04", "#ffba08", "#0a9396"))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)
 
 pdf(file = "../figures/burn_conditions_pca.pdf", width = 5, height = 5) 
 print(burn_conditions_pca)
@@ -2728,6 +2823,36 @@ dev.off()
 
 ```
 
+#NMR per change
+```{r figure}
+#figures for percent change with burning
+per_change<-data_solids %>%
+  select(Land_Coverage_Category, Burn_Severity, mono_per_change, di_per_change) %>%
+  filter(Burn_Severity != "Unburned") %>%
+  dplyr::rename(Monoester = mono_per_change,
+         Diester = di_per_change)
+
+per_change<-melt(per_change, id=c("Burn_Severity", "Land_Coverage_Category"))
+
+per_change$Burn_Severity=factor(per_change$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+mono_die_loss<- ggplot(per_change, aes(x=Burn_Severity, y=value, fill=variable))+geom_boxplot()+theme_classic()+ylab("Percent Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))+labs(fill=NULL)
+
+pdf(file = "../figures/mono_die_loss.pdf", width = 6, height = 3) 
+print(mono_die_loss)
+dev.off()
+```
+
+```{r stats}
+#stats to see if there is a significant difference between monoester and diester loss within a burn severity classification for each ecosystem type separately; two-way ANOVA with interaction
+mono_DF<-per_change%>%
+  filter(Land_Coverage_Category=="Douglas-fir forest" & variable=="Monoester")
+
+
+model<- aov(value~Land_Coverage_Category*Burn_Severity, data = per_change)
+summary(model)
+```
+
 
 #SEM
 ```{r path analysis setup}
@@ -3676,6 +3801,87 @@ model <- '
     Di ~~ Di
     Leachate_P_mg_kgchar_unfilt_Mean ~~ Leachate_P_mg_kgchar_unfilt_Mean
 '
+
+
+
+
+#landcover predict burn severity
+#filtered <0.7 nominal pore size
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Burn_Severity ~ Land_Coverage_Category
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean ~~ Leachate_mg_P_per_g_P_in_solid_filt0.7_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
+
+
+#particulates >0.7 nominal pore size
+model <- '
+  # Structural Model
+    Solid_P_g_kg ~ Burn_Severity
+    XANES_Pi_Ca ~ Burn_Severity
+    Solid_P_g_kg ~ Land_Coverage_Category
+    XANES_Pi_Ca ~ Land_Coverage_Category
+    Burn_Severity ~ Land_Coverage_Category
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~ XANES_Pi_Ca + Solid_P_g_kg
+    
+  # Residual Variances
+    Solid_P_g_kg~~Solid_P_g_kg  
+    XANES_Pi_Ca ~~ XANES_Pi_Ca
+    Leachate_mg_P_per_g_P_in_solid_part_Mean ~~ Leachate_mg_P_per_g_P_in_solid_part_Mean
+'
+
+# Fit the SEM model
+fit <- sem(model, data = data_rda_combine)
+#fit<-cfa(model, data = data_rda_combine)
+
+# Summarize the results
+summary(fit, fit.measures=TRUE, standardized=TRUE, rsquare=TRUE)
+fitMeasures(fit, c("chisq", "cfi", "tli", "rmsea", "aic"))
+
+#visualize it
+#labels<-c("Char P","Char Pi-Ca","Aqueous MBD","Burn Severity","Ecosystem Type")
+#nodeLabels = labels,
+p_pa<-semPlot::semPaths(fit,'std',  edge.label.cex = 1.5,
+         label.prop=0.9, rotation = 1, nCharNodes=0,
+         equalizeManifests = FALSE, optimizeLatRes = TRUE, 
+         edge.width = 0.6, shapeMan = "rectangle", shapeLat = "ellipse", 
+         shapeInt = "triangle", sizeInt = 2, sizeLat = 4, 
+         curve=2, residuals = FALSE, layout="tree2",
+         edge.label.position=0.7, fade = TRUE, colFactor=0.25, 
+         node.width = 4)
+p_pa2 <- mark_sig(p_pa, fit)
+plot(p_pa2)
 ```
 
 ##Cluster
