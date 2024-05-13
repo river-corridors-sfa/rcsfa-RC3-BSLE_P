@@ -56,7 +56,7 @@ BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/189413
 BSLE P manuscript data package URL: INSERT HERE!!! fix
 
 Bring in the data package data:
-```{r bsle v3 data package}
+```{r data packages}
 #metadata
 Meta <- read_csv("../data/BSLE_Data_Package_v3/v1_BSLE_Metadata_and_Protocols/BSLE_Burn_and_Laboratory_Metadata.csv") %>%
   dplyr::rename(Sample_ID = Sample_Name,
@@ -82,6 +82,7 @@ NMR_spectra <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_31P-NMR.
 #chemical data from BSLE P manuscript data package
 NMR <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Deconvolutions.csv") %>%
   filter(Degradation_Corrected == 'Yes')
+NMR_Spikes <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Spike_ppm.csv") 
 XANES <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/P-XANES_LCF.csv")  
 XANES_spectra <- read_csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/xanes_example_spectra.csv") #this file was generated using XANES_Spectra_Merging script 
 XANES_rc_spectra <- read_csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Reference_Compounds/xanes_example_referencecompounds.csv") #this file was generated using XANES_Spectra_Merging script 
@@ -666,6 +667,19 @@ summary_solids <- data_solids %>%
 write.csv(summary_solids, "../data/summary_solids_nmr.csv") #save this for a table
 write.csv(data_solids, "../data/data_solids.csv") #save this for individual info collated
 
+
+#Chemical shift of spiked compounds into NMR experiments
+summary_NMR_spike <-melt(NMR_Spikes, id=c("Parent_ID", "Compound_Name"))
+
+summary_NMR_spike <- summary_NMR_spike %>%
+  dplyr::group_by(Compound_Name, variable) %>%
+  dplyr::summarize(
+    Mean = mean(value, na.rm = TRUE),
+    Standard_Deviation = sd(value, na.rm = TRUE),
+    Count = n()
+  )
+
+
 #leachate concentrations
 P.Conc.leach<- data %>%
   dplyr::group_by(Burn_Severity, Land_Coverage_Category) %>%
@@ -764,6 +778,33 @@ stoich_mean <- stoich %>%
 #write csv
 write.csv(stoich_mean, "../data/summary_stoich.csv") #save this for a table
 ```
+##Temp and Duration
+```{burn severity}
+
+#FIX (remove)
+
+
+#determine if max char temp changes with burn severity; landcovers separate
+model<-aov(log10(Char_Max_Temp)~Burn_Severity, data=subset(data_solids, Land_Coverage_Category=="Douglas-fir Forest"))
+summary(model)
+#model assumptions
+hist(data_solids[data_solids$Land_Coverage_Category == "Douglas-fir Forest", "Char_Max_Temp"])
+ggqqplot(residuals(model))
+#interaction post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+
+#determine if burn duration changes with burn severity; landcovers separate
+model<-aov(log10(Burn_Duration+1)~Burn_Severity, data=subset(data_solids, Land_Coverage_Category=="Douglas-fir Forest"))
+summary(model)
+#model assumptions
+hist(data_solids[data_solids$Land_Coverage_Category == "Douglas-fir Forest", "Char_Max_Temp"])
+ggqqplot(residuals(model))
+#interaction post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
+
+```
+
 
 ##Solid Figures and Stats
 ```{r char P conc}
