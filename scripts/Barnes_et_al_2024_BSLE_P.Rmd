@@ -56,7 +56,7 @@ BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/189413
 BSLE P manuscript data package URL: INSERT HERE!!! fix
 
 Bring in the data package data:
-```{r data packages}
+```{r import data packages}
 #metadata
 Meta <- read_csv("../data/BSLE_Data_Package_v3/v1_BSLE_Metadata_and_Protocols/BSLE_Burn_and_Laboratory_Metadata.csv") %>%
   dplyr::rename(Sample_ID = Sample_Name,
@@ -83,6 +83,7 @@ NMR_spectra <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_31P-NMR.
 NMR <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Deconvolutions.csv") %>%
   filter(Degradation_Corrected == 'Yes')
 NMR_Spikes <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Spike_ppm.csv") 
+NMR_Species_Per <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Species_Percent.csv") 
 XANES <- read.csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/P-XANES_LCF.csv")  
 XANES_spectra <- read_csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/xanes_example_spectra.csv") #this file was generated using XANES_Spectra_Merging script 
 XANES_rc_spectra <- read_csv("../data/Barnes_2023_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Reference_Compounds/xanes_example_referencecompounds.csv") #this file was generated using XANES_Spectra_Merging script 
@@ -300,6 +301,15 @@ XANES_clean <- XANES %>%
 NMR_clean <- NMR %>%
   separate(col=Sample_Name, into = c("Parent_ID", "FilterSize"), sep="-") 
 
+NMR_Species_Per_clean <- NMR_Species_Per %>%
+  select(Parent_ID, Percent, Species) %>%
+  filter(Species!='Unknown Monoester')%>%
+  drop_na() %>%
+  mutate(Species = ifelse(Species == "Ortho", "OrthoP", Species)) %>%
+  mutate(Species = ifelse(Species == "Pyro", "PyroP", Species)) %>%
+  pivot_wider(names_from = Species, values_from = Percent) %>%
+  mutate(Lipids = AlphaGP + BetaGP)
+
 
 XANES_rc_spectra <- XANES_rc_spectra %>%
   mutate_all(~ifelse(. == -9999, NA, .))
@@ -331,7 +341,8 @@ data_solids <- data %>%
   filter(str_detect(Sample_ID, "A")) %>%
   select(1:28) %>%
   left_join(NMR_clean) %>%
-  left_join(XANES_clean)
+  left_join(XANES_clean) %>%
+  left_join(NMR_Species_Per_clean)
 
 data_solids$Burn_Severity=factor(data_solids$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
 
@@ -608,6 +619,18 @@ summary_solids_conc <- data_solids %>%
     Pyro_Standard_Deviation = sd(Pyro, na.rm = TRUE),
     M_D_Mean = mean(M_D_ratio, na.rm = TRUE),
     M_D_Standard_Deviation = sd(M_D_ratio, na.rm = TRUE),
+    PyroP_Mean = mean(PyroP, na.rm = TRUE),
+    PyroP_Standard_Deviation = sd(PyroP, na.rm = TRUE),
+    Phytate_Mean = mean(Phytate, na.rm = TRUE),
+    Phytate_Standard_Deviation = sd(Phytate, na.rm = TRUE),
+    Lipids_Mean = mean(Lipids, na.rm = TRUE),
+    Lipids_Standard_Deviation = sd(Lipids, na.rm = TRUE),
+    DNA_Mean = mean(DNA, na.rm = TRUE),
+    DNA_Standard_Deviation = sd(DNA, na.rm = TRUE),
+    RNA_Mean = mean(RNA, na.rm = TRUE),
+    RNA_Standard_Deviation = sd(RNA, na.rm = TRUE),
+    G6P_Mean = mean(G6P, na.rm = TRUE),
+    G6P_Standard_Deviation = sd(G6P, na.rm = TRUE),
     XANES_Po_Mean = mean(XANES_Po, na.rm = TRUE),
     XANES_Po_Standard_Deviation = sd(XANES_Po, na.rm = TRUE),
     XANES_Pi_Mean = mean(XANES_Pi, na.rm = TRUE),
@@ -963,6 +986,19 @@ pdf(file = "../figures/SB.mod.nmr.pdf", width = 1, height = 1)
 print(SB.mod.nmr)
 dev.off()
 
+#test plots of NMR species
+
+nmr.fig<-data_solids %>%
+  select(Burn_Severity, Land_Coverage_Category, Ortho, PyroP, Lipids, DNA, RNA, Phytate, G6P)
+
+nmr.fig<-melt(nmr.fig, id =c("Burn_Severity", "Land_Coverage_Category"))
+
+  
+nmr.fig$variable=factor(nmr.fig$variable, levels= c("Ortho", "PyroP", "Lipids", "DNA", "RNA", "Phytate", "G6P"))
+
+leach.Pnorm.conc<-ggplot(nmr.fig, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab("Relative Percent (%)")+ xlab("Burn Severity")+facet_grid(variable~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90))
+
+cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
 ```
 
 ```{r NMR percent change}
