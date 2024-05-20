@@ -1001,6 +1001,21 @@ leach.Pnorm.conc<-ggplot(nmr.fig, aes(x=Burn_Severity, y=value, fill=Land_Covera
 cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
 ```
 
+```{r NMR species stacked bar}
+NMR.species<-summary_solids_conc %>%
+  select(Burn_Severity, Land_Coverage_Category, Phytate_Mean, Lipids_Mean, DNA_Mean, RNA_Mean, G6P_Mean)
+
+NMR.species<-melt(NMR.species, id=c('Burn_Severity', 'Land_Coverage_Category'))
+
+  
+ggplot(NMR.species, aes(x = Burn_Severity, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = value), position = position_stack(vjust = 0.5), color = "white") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_classic() + facet_grid(.~Land_Coverage_Category)
+
+```
+
 ```{r NMR percent change}
 #figures for percent change of NMR monoester and diester species with burning; fig SI-2 
 per_change<-data_solids %>%
