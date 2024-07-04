@@ -1708,20 +1708,43 @@ dev.off()
 
 ```
 
-#NMR per change
+#NMR percent change
 ```{r figure}
 #figures for percent change with burning
 per_change<-data_solids %>%
   select(Land_Coverage_Category, Burn_Severity, mono_per_change, di_per_change) %>%
   filter(Burn_Severity != "Unburned") %>%
   dplyr::rename(Monoester = mono_per_change,
-         Diester = di_per_change)
+         Diester = di_per_change) %>%
+  mutate(
+    Burn_Severity = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
+      TRUE ~ as.character(Burn_Severity)),
+    Burn_Severity = factor(Burn_Severity, levels = c("Low 295-627", "Low 308-502", "Moderate 589-757",
+                                                     "Moderate 512-547", "High 589-757")))
 
 per_change<-melt(per_change, id=c("Burn_Severity", "Land_Coverage_Category"))
 
-per_change$Burn_Severity=factor(per_change$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
-
-mono_die_loss<- ggplot(per_change, aes(x=Burn_Severity, y=value, fill=variable))+geom_boxplot()+theme_classic()+ylab("Percent Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))+labs(fill=NULL)
+mono_die_loss<- ggplot(per_change, aes(x = Burn_Severity, y = value, fill = variable)) +
+  geom_boxplot() +
+  theme_classic() +
+  ylab("Percent Loss (%)") +
+  xlab("Burn Severity") +
+  scale_fill_manual(values = c("#D08C60", "#e2b89d")) +
+  facet_grid(. ~ Land_Coverage_Category, scales = "free_x") +
+  theme(
+    text = element_text(size = 15),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Tilted 45 degrees
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1)
+  ) +
+  labs(fill = NULL) +
+  scale_x_discrete(labels = split_labels_with_parentheses)
 
 pdf(file = "../figures/mono_die_loss.pdf", width = 6, height = 3) 
 print(mono_die_loss)
