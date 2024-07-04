@@ -836,13 +836,13 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 270,
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 125,
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 30,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 90,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 110,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 75,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 50,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 175,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 90,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 40),
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 14,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 37,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 35,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 46,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 28,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 47,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44),
     Burn_Severity = case_when(
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
@@ -895,9 +895,22 @@ cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1
 leach.fig.mbd<-leach.fig %>%
   filter(str_detect(variable, "Molybdate"))
 
-leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x=Burn_Severity, y=value, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Leachable~P~(mg~g^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("gray", "gray"))+theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90))+facet_grid(.~Land_Coverage_Category, scales = "free")
+leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    ylab(expression(paste(atop("Leachable Aqueous Molybdate", "Reactive P (mg g"^"-1"*")")))) +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#346648", "#D8B70A")) +
+    facet_grid(. ~ Land_Coverage_Category, scales = "free") +
+    scale_x_discrete(labels = split_labels_with_parentheses) +
+    theme(
+        text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Tilted 45 degrees
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1)  # Add border around facets
+    ) +
+    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
 
-cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_aspect_ratio= 1.6:2.6, dpi=100)
+cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 4, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
 
 
 ```
