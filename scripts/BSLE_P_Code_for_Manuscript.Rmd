@@ -984,7 +984,7 @@ leach.Pnorm.conc<-ggplot(leach.fig.stack, aes(x = Burn_Severity, y = value, fill
   theme_classic() +
   ylab(expression(paste(Leachable~P~(mg~g^-1), sep = ""))) +
   xlab("Burn Severity") +
-  scale_fill_manual(values = c("#346648", "#D8B70A")) +
+  scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
   facet_grid(variable ~ Land_Coverage_Category, scales = "free") +
   scale_x_discrete(labels = split_labels_with_parentheses) +
   theme(
@@ -1008,7 +1008,7 @@ leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fi
     theme_classic() +
     ylab(expression(paste(atop("Leachable Aqueous Molybdate", "Reactive P (mg g"^"-1"*")")))) +
     xlab("Burn Severity") +
-    scale_fill_manual(values = c("#346648", "#D8B70A")) +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
     facet_grid(. ~ Land_Coverage_Category, scales = "free") +
     scale_x_discrete(labels = split_labels_with_parentheses) +
     theme(
@@ -1177,7 +1177,7 @@ data_solids_Pconc <- data_solids %>%
     Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
                                                      "Moderate 512-547", "High 589-757")))
 
-solid.P.BS.fig<-ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category, scales = "free")+
+solid.P.BS.fig<-ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+
     scale_x_discrete(labels = split_labels_with_parentheses) +
     theme(
         text = element_text(size = 15),
@@ -1269,17 +1269,6 @@ NMR_melt<-melt(NMR, id=c("Land_Coverage_Category", "Burn_Severity"))
 
 NMR_melt$variable=factor(NMR_melt$variable, levels= c("Ortho", "Pyro", "Mono", "Di"))
 
-DF.raw<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
-nmr.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
-    geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
-    theme(legend.key.size = unit(1, 'cm'), #change legend key size
-          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
-          legend.key.width = unit(1, 'cm'), #change legend key width
-          legend.text = element_text(size=20))+labs(fill="")
-pdf(file = "../figures/nmr.legend.pdf", width = 7, height = 3.5) 
-print(nmr.legend)
-dev.off()
 
 "#9B9B7A","#424a26", "#997B66", "#E5C59E"
 
@@ -1291,9 +1280,21 @@ dev.off()
 
 "#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"
 
+DF.raw<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
+nmr.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
+    geom_col(color = "black") +
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
+    theme(legend.key.size = unit(1, 'cm'), #change legend key size
+          legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
+          legend.key.width = unit(1, 'cm'), #change legend key width
+          legend.text = element_text(size=20))+labs(fill="")
+pdf(file = "../figures/nmr.legend.pdf", width = 7, height = 3.5) 
+print(nmr.legend)
+dev.off()
+
 DF.raw.nmr<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.raw.nmr.pdf", width = 1, height = 1) 
 print(DF.raw.nmr)
@@ -1302,7 +1303,7 @@ dev.off()
 DF.low<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
 DF.low.nmr<-ggplot(DF.low, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.low.nmr.pdf", width = 1, height = 1) 
 print(DF.low.nmr)
@@ -1311,7 +1312,7 @@ dev.off()
 DF.mod<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
 DF.mod.nmr<-ggplot(DF.mod, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.mod.nmr.pdf", width = 1, height = 1) 
 print(DF.mod.nmr)
@@ -1320,7 +1321,7 @@ dev.off()
 DF.high<-subset(NMR_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
 DF.high.nmr<-ggplot(DF.high, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.high.nmr.pdf", width = 1, height = 1) 
 print(DF.high.nmr)
@@ -1329,7 +1330,7 @@ dev.off()
 SB.raw<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
 SB.raw.nmr<-ggplot(SB.raw, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.raw.nmr.pdf", width = 1, height = 1) 
 print(SB.raw.nmr)
@@ -1338,7 +1339,7 @@ dev.off()
 SB.low<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Low")
 SB.low.nmr<-ggplot(SB.low, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.low.nmr.pdf", width = 1, height = 1) 
 print(SB.low.nmr)
@@ -1347,7 +1348,7 @@ dev.off()
 SB.mod<-subset(NMR_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Moderate")
 SB.mod.nmr<-ggplot(SB.mod, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#F1DCA7", "#997B66", "#D9AE94", "#D08C60", ))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#997B66","#F1DCA7", "#D08C60", "#e2b89d"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.mod.nmr.pdf", width = 1, height = 1) 
 print(SB.mod.nmr)
@@ -1421,7 +1422,7 @@ XANES_melt<-melt(XANES, id=c("Land_Coverage_Category", "Burn_Severity"))
 DF.raw<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Unburned")
 xanes.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.key.size = unit(1, 'cm'), #change legend key size
           legend.key.height = unit(1, 'cm'),  legend.title = element_text(size=25),
           legend.key.width = unit(1, 'cm'), #change legend key width
@@ -1434,7 +1435,7 @@ dev.off()
 
 DF.raw.xanes<-ggplot(DF.raw, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.raw.xanes.pdf", width = 1, height = 1) 
 print(DF.raw.xanes)
@@ -1443,7 +1444,7 @@ dev.off()
 DF.low<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Low")
 DF.low.xanes<-ggplot(DF.low, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.low.xanes.pdf", width = 1, height = 1) 
 print(DF.low.xanes)
@@ -1452,7 +1453,7 @@ dev.off()
 DF.mod<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="Moderate")
 DF.mod.xanes<-ggplot(DF.mod, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.mod.xanes.pdf", width = 1, height = 1) 
 print(DF.mod.xanes)
@@ -1461,7 +1462,7 @@ dev.off()
 DF.high<-subset(XANES_melt, Land_Coverage_Category=="Douglas-fir forest" & Burn_Severity=="High")
 DF.high.xanes<-ggplot(DF.high, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/DF.high.xanes.pdf", width = 1, height = 1) 
 print(DF.high.xanes)
@@ -1470,7 +1471,7 @@ dev.off()
 SB.raw<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Unburned")
 SB.raw.xanes<-ggplot(SB.raw, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.raw.xanes.pdf", width = 1, height = 1) 
 print(SB.raw.xanes)
@@ -1479,7 +1480,7 @@ dev.off()
 SB.low<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Low")
 SB.low.xanes<-ggplot(SB.low, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.low.xanes.pdf", width = 1, height = 1) 
 print(SB.low.xanes)
@@ -1488,7 +1489,7 @@ dev.off()
 SB.mod<-subset(XANES_melt, Land_Coverage_Category=="Sagebrush shrubland" & Burn_Severity=="Moderate")
 SB.mod.xanes<-ggplot(SB.mod, aes(x = "", y = value, fill = variable)) +
     geom_col(color = "black") +
-    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#675549",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
+    coord_polar(theta = "y") + scale_fill_manual(values = c("#493C32", "#87745D",  "#C5AC87", "#F1DCA7", "#FFF4DC", "#FFFCF5", "#ae6433"))+theme_void()+
     theme(legend.position = "none")
 pdf(file = "../figures/SB.mod.xanes.pdf", width = 1, height = 1) 
 print(SB.mod.xanes)
@@ -1720,7 +1721,7 @@ per_change<-melt(per_change, id=c("Burn_Severity", "Land_Coverage_Category"))
 
 per_change$Burn_Severity=factor(per_change$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
 
-mono_die_loss<- ggplot(per_change, aes(x=Burn_Severity, y=value, fill=variable))+geom_boxplot()+theme_classic()+ylab("Percent Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))+labs(fill=NULL)
+mono_die_loss<- ggplot(per_change, aes(x=Burn_Severity, y=value, fill=variable))+geom_boxplot()+theme_classic()+ylab("Percent Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))+labs(fill=NULL)
 
 pdf(file = "../figures/mono_die_loss.pdf", width = 6, height = 3) 
 print(mono_die_loss)
