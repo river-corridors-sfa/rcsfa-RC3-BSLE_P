@@ -308,7 +308,8 @@ NMR_Species_Per_clean <- NMR_Species_Per %>%
   mutate(Species = ifelse(Species == "Ortho", "OrthoP", Species)) %>%
   mutate(Species = ifelse(Species == "Pyro", "PyroP", Species)) %>%
   pivot_wider(names_from = Species, values_from = Percent) %>%
-  mutate(Lipids = AlphaGP + BetaGP)
+  mutate(across(2:11, ~ ifelse(is.na(.), 0, .))) %>%
+  mutate(Lipids = AlphaGP + BetaGP) 
 
 
 XANES_rc_spectra <- XANES_rc_spectra %>%
@@ -365,16 +366,20 @@ data_solids<-data_solids %>%
 data_solids<-data_solids %>%
   mutate(M_D_ratio=Mono/Di)
 
-#percent change based on average percent monoester and diester in the unburned
+#percent change of NMR results with burning based on average percent monoester and diester in the unburned
 data_solids <- data_solids %>%
   mutate(mono_per_change = case_when(
-    Land_Coverage_Category == "Sagebrush Shrubland" ~ ((Mono - 27)/27)*100,
-    Land_Coverage_Category == "Douglas-fir Forest" ~ ((Mono - 3.2)/3.2)*100))
+    Land_Coverage_Category == "Sagebrush Shrubland" ~ ((Mono - 26.1)/26.1)*100,
+    Land_Coverage_Category == "Douglas-fir Forest" ~ ((Mono - 4.1)/4.1)*100))
 
 data_solids <- data_solids %>%
   mutate(di_per_change = case_when(
-    Land_Coverage_Category == "Sagebrush Shrubland" ~ ((Di - 26.9)/26.9)*100,
-    Land_Coverage_Category == "Douglas-fir Forest" ~ ((Di - 38.3)/38.3)*100))
+    Land_Coverage_Category == "Sagebrush Shrubland" ~ ((Di - 27.6)/27.6)*100,
+    Land_Coverage_Category == "Douglas-fir Forest" ~ ((Di - 36.5)/36.5)*100))
+
+#calculate bioavailabile P from NMR (RNA, DNA, phospholipids, sugar phosphates)
+data_solids<- data_solids %>%
+  mutate(NMR_bio= DNA + RNA + Lipids + G6P)
 
 #convert C and N of solids from percent to mg/kg in data_solids dataframe
 data_solids<-data_solids %>%
@@ -631,6 +636,8 @@ summary_solids_conc <- data_solids %>%
     RNA_Standard_Deviation = sd(RNA, na.rm = TRUE),
     G6P_Mean = mean(G6P, na.rm = TRUE),
     G6P_Standard_Deviation = sd(G6P, na.rm = TRUE),
+    Bio_Mean = mean(NMR_bio, na.rm = TRUE),
+    Bio_Standard_Deviation = sd(NMR_bio, na.rm = TRUE),
     XANES_Po_Mean = mean(XANES_Po, na.rm = TRUE),
     XANES_Po_Standard_Deviation = sd(XANES_Po, na.rm = TRUE),
     XANES_Pi_Mean = mean(XANES_Pi, na.rm = TRUE),
@@ -1016,6 +1023,97 @@ ggplot(NMR.species, aes(x = Burn_Severity, y = value, fill = variable)) +
 
 ```
 
+```{r NMR PCA}
+solid <- data_solids %>%
+  select(Land_Coverage_Category, Burn_Severity, Ortho, Phytate, DNA, RNA, G6P,AlphaGP, BetaGP, Pyro) %>%
+  mutate(across(3:10, ~ ifelse(is.na(.), 0, .)))
+
+pca <- prcomp(solid[3:10], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(solid[3:10])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 6
+yscale <- 6
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=solid$Land_Coverage_Category,shape=solid$Burn_Severity),size=5)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", linewidth=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)+ggtitle("Open Air XANES - Solid")
+
+```
+
+```{r NMR bio stats}
+#Solid char total P anova
+model<-aov(log10(NMR_bio+1)~Burn_Severity*Land_Coverage_Category, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$NMR_bio+1))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(log10(data_solids$NMR_bio+1)) #p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedastic
+#interaction post hoc: 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey")
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir Forest"),adjust="tukey") 
+emmeans::emmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush Shrubland"),adjust="tukey") 
+
+```
+
+```{r NMR and XANES cluster}
+#solid NMR and XANES species
+#https://uc-r.github.io/kmeans_clustering
+
+
+solid <- data_solids %>%
+  select(Parent_ID, Land_Coverage_Category, Burn_Severity,  Ortho, Phytate, DNA, RNA, G6P,AlphaGP, BetaGP, Pyro)  %>%
+  mutate_all(~ ifelse(is.na(.), 0, .))%>%
+  unite(Treatment, Parent_ID, Land_Coverage_Category, Burn_Severity) %>%
+  column_to_rownames("Treatment") %>%
+  scale(center = TRUE, scale = TRUE) 
+
+#extra variables I could add in
+XANES_Po, XANES_Pi_Fe, XANES_Pi_Na, XANES_Pi_Ca, XANES_Pi_Al, XANES_Pi_Mg, XANES_Pi_K,
+
+#K means
+#figure out the best number of clusters:
+factoextra::fviz_nbclust(solid, kmeans, method = "wss")
+factoextra::fviz_nbclust(solid, kmeans, method = "silhouette")
+gap_stat <- cluster::clusGap(solid, FUN = kmeans, nstart = 25,
+                    K.max = 10, B = 100)
+factoextra::fviz_gap_stat(gap_stat)
+
+#Try 6
+k3 <- kmeans(solid, centers = 3, nstart = 25)
+
+#cluster numbers will change each time you run this, so just verify these are the right clusters before applying colors 
+factoextra::fviz_cluster(k3, data = solid, ggtheme = theme_classic(), ellipse.type = "confidence", show.clust.cent = FALSE)
+
+
+#dendro
+dendro = factoextra::get_dist(solid, method ="spearman")
+factoextra::fviz_dist(dendro, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+
+cluster_matrix = hclust(dendro)
+
+plot(cluster_matrix)
+ggdendro::ggdendrogram(cluster_matrix, rotate= TRUE)
+
+```
+
 ```{r NMR percent change}
 #figures for percent change of NMR monoester and diester species with burning; fig SI-2 
 per_change<-data_solids %>%
@@ -1052,6 +1150,19 @@ wilcox.test(value~variable, data = subset(per_change, Burn_Severity=="Low" & Lan
 
 wilcox.test(value~variable, data = subset(per_change, Burn_Severity=="Moderate" & Land_Coverage_Category=="Sagebrush Shrubland"))
 
+
+#percent change of all NMR species
+per_change<-data_solids %>%
+  select(Land_Coverage_Category, Burn_Severity, mono_per_change, di_per_change) %>%
+  filter(Burn_Severity != "Unburned") %>%
+  dplyr::rename(Monoester = mono_per_change,
+         Diester = di_per_change)
+
+per_change<-melt(per_change, id=c("Burn_Severity", "Land_Coverage_Category"))
+
+per_change$Burn_Severity=factor(per_change$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+
+mono_die_loss<- ggplot(per_change, aes(x=Burn_Severity, y=value, fill=variable))+geom_boxplot()+theme_classic()+ylab("Percent Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))+labs(fill=NULL)
 ```
 
 ```{r XANES sample fig}
