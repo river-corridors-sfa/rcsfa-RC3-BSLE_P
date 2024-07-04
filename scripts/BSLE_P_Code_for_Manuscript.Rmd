@@ -367,6 +367,10 @@ XANES_clean<- Meta %>%
 data<-data %>%
   mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
   mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
+
+data_solids <-data_solids %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 ```
 
 ####Additional Calcs
@@ -567,6 +571,19 @@ write.csv(data, "../data/data.csv", row.names = FALSE) #all data
 write.csv(data_solids, "../data/data_solids.csv", row.names = FALSE) #solids only
 ```
 
+##Functions
+```{r axis label}
+split_labels_with_parentheses <- function(x) {
+  sapply(x, function(label) {
+    parts <- strsplit(as.character(label), " ")[[1]]
+    if (length(parts) > 1) {
+      paste(parts[1], "\n", paste0("(", parts[2], " °C)"), sep = "")
+    } else {
+      label
+    }
+  })
+}
+```
 
 ##Quick data import
 ```{r quick import}
@@ -882,17 +899,6 @@ leach.fig <- leach.fig %>%
 leach.fig.stack<-leach.fig %>%
   filter(str_detect(variable, "Total"))
 
-split_labels_with_parentheses <- function(x) {
-  sapply(x, function(label) {
-    parts <- strsplit(as.character(label), " ")[[1]]
-    if (length(parts) > 1) {
-      paste(parts[1], "\n", paste0("(", parts[2], " °C)"), sep = "")
-    } else {
-      label
-    }
-  })
-}
-
 leach.Pnorm.conc<-ggplot(leach.fig.stack, aes(x = Burn_Severity, y = value, fill = Land_Coverage_Category)) +
   geom_boxplot(show.legend = FALSE) +
   theme_classic() +
@@ -1012,17 +1018,6 @@ data_pH <- data %>%
     Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
                                                      "Moderate 512-547", "High 589-757")))
 
-split_labels_with_parentheses <- function(x) {
-  sapply(x, function(label) {
-    parts <- strsplit(as.character(label), " ")[[1]]
-    if (length(parts) > 1) {
-      paste(parts[1], "\n", paste0("(", parts[2], " °C)"), sep = "")
-    } else {
-      label
-    }
-  })
-}
-
 pH_BS<-ggplot(data_pH, aes(x=Burn_Severity, y=pH, fill=Burn_Severity))+geom_boxplot()+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#0a9396", "#ffba08", "#ffba08", "#e85d04", "#e85d04","#9d0208"))+facet_grid(.~Land_Coverage_Category, scales = "free") +
     scale_x_discrete(labels = split_labels_with_parentheses) +
     theme(
@@ -1064,20 +1059,53 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(L
 
 ####Solid ICP
 ```{r solid fig and stats}
-data_solids$Burn_Severity=factor(data_solids$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
+data_solids_Pconc <- data_solids %>%
+  mutate(
+    Annotation = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "a",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "a",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "a",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "b",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "a",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "b",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "c"),
+    x = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547"),
+    y = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 2.8,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 3.8,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 3.6,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 9.2,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~2.35,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 6.9,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 17.5),
+    Burn_Severity = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
+      TRUE ~ as.character(Burn_Severity)),
+    Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
+                                                     "Moderate 512-547", "High 589-757")))
 
-data_solids <-data_solids %>%
-  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
-  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
+solid.P.BS.fig<-ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category, scales = "free")+
+    scale_x_discrete(labels = split_labels_with_parentheses) +
+    theme(
+        text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Tilted 45 degrees
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
+    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
 
-
-solid.P.BS.fig<-ggplot(data_solids, aes(x=Burn_Severity, y=Solid_P_mg_kg, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(mg~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("#346648", "#dbb40d"))+facet_grid(.~Land_Coverage_Category)+theme(text = element_text(size = 15))
-
-cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
-
-solid.P.BS.fig<-ggplot(data_solids, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+scale_fill_manual(values=c("gray", "gray"))+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90))
-
-cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, base_aspect_ratio= 1.25:1, dpi=100)
+cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, ncol = 1, nrow = 1, dpi=100)
 
 #ICP solid total P stats; likely use this one for publication
 model<-aov(log10(Solid_P_mg_kg)~Burn_Severity*Land_Coverage_Category, data = data_solids)
