@@ -363,6 +363,10 @@ XANES_clean<- Meta %>%
   filter(Burn_Treatment %in% c("burn table" , "raw")) %>%
   filter(Land_Coverage_Category %in% c("Douglas-fir forest" , "Sagebrush shrubland")) %>%
   filter(!is.na(FilterSize))
+
+data<-data %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
+  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 ```
 
 ####Additional Calcs
@@ -935,14 +939,10 @@ cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, 
 
 ####pH
 ```{r aqueous P}
-data<-data %>%
-  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
-  mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
-
 #figure to see relationship between P in aqueous fraction and pH
-aq_pH<-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=Burn_Severity))+geom_point() + geom_smooth(method = "lm", se = FALSE, na.rm = TRUE, fullrange = TRUE, aes(group=1), color = "black") +theme_classic()+ylab(expression(paste(Aqueous~P~(mg~g^-1), sep="")))+ xlab("pH")+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))+scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))
+aq_pH<-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=Burn_Severity))+geom_point() + geom_smooth(method = "lm", se = FALSE, na.rm = TRUE, fullrange = TRUE, aes(group=1), color = "black") +theme_classic()+ylab(expression(paste(Aqueous~P~(mg~g^-1), sep="")))+ xlab("pH")+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))+scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))
 
-cowplot::save_plot("../figures/aq_pH.pdf", aq_pH, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
+cowplot::save_plot("../figures/aq_pH.pdf", aq_pH, ncol = 1, nrow = 1,  base_height = 3.85, base_width = 8.9, base_aspect_ratio= 2:1, dpi=100)
 
 #Anova to see relationship between aqueous P concentration and pH for each ecosystem type separately
 #sagebrush shrubland
@@ -973,9 +973,66 @@ performance::check_heteroscedasticity(model) #p > 0.05 so can assume homoscedast
 
 ```{r pH and BS}
 #figure of pH and burn severity
-pH_BS<-ggplot(data, aes(x=Burn_Severity, y=pH, fill=Burn_Severity))+geom_boxplot()+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208"))+facet_grid(.~Land_Coverage_Category, scales = "free")+theme(text = element_text(size = 15))
 
-cowplot::save_plot("../figures/pH_BS.pdf", pH_BS, ncol = 1, nrow = 1, base_aspect_ratio= 2:1, dpi=100)
+data_pH <- data %>%
+  mutate(
+    Annotation = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "a",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "a",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "b",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "c",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "a",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "b",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "c"),
+    x = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547"),
+    y = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 5.75,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 9.5,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 10.25,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 11.775,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~4.75,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 7.8,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 11.3),
+    Burn_Severity = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
+      TRUE ~ as.character(Burn_Severity)),
+    Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
+                                                     "Moderate 512-547", "High 589-757")))
+
+split_labels_with_parentheses <- function(x) {
+  sapply(x, function(label) {
+    parts <- strsplit(as.character(label), " ")[[1]]
+    if (length(parts) > 1) {
+      paste(parts[1], "\n", paste0("(", parts[2], " °C)"), sep = "")
+    } else {
+      label
+    }
+  })
+}
+
+pH_BS<-ggplot(data_pH, aes(x=Burn_Severity, y=pH, fill=Burn_Severity))+geom_boxplot()+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#0a9396", "#ffba08", "#ffba08", "#e85d04", "#e85d04","#9d0208"))+facet_grid(.~Land_Coverage_Category, scales = "free") +
+    scale_x_discrete(labels = split_labels_with_parentheses) +
+    theme(
+        text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Tilted 45 degrees
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
+    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
+
+cowplot::save_plot("../figures/pH_BS.pdf", pH_BS, ncol = 1, nrow = 1, base_height = 5, base_width = 10, dpi=100)
+
 
 #stats to see relationship of pH with burn severity and ecosystem type 
 
