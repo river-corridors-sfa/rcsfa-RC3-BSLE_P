@@ -711,38 +711,18 @@ write.csv(P.Conc.leach, "../data/summary_leachate_conc.csv") #save this for a ta
 ```
 
 
-####ICP Leachates
+####Leachable P
 ```{r leachate stats}
 #Leachable P statistics
-#ICP filtered (<0.7 nominal phase) normalized to total P in solid char
-model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
-model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
-model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
-model.int<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
-anova(model,model.BS) #sig
-anova(model,model.LC) #sig
-anova(model,model.int) #sig
-#check VIF
-vif(model)
-#model assumptions
-hist(log10(data$Leachate_mg_P_per_g_P_in_solid_filt0.7))
-ggqqplot(residuals(model))
-plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
-#interaction post hoc: 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
-emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
 
-#ICP particulates (>0.7 nominal phase) normalized to total P in solid char
+#ICP particulates (leachable particulate phase; >0.7 nominal phase) normalized to total P in solid char
 model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
 model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Land_Coverage_Category+(1|Parent_ID), data=data)
 model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity+(1|Parent_ID), data=data)
 model.int<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_part)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
-anova(model,model.BS) #sig
-anova(model,model.LC) #sig
-anova(model,model.int) #sig
+anova(model,model.BS)
+anova(model,model.LC)
+anova(model,model.int)
 #check VIF
 vif(model)
 #model assumptions
@@ -756,14 +736,52 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(B
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
 emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey") 
 
-#need to add MBD stats back in
+#ICP filtered (leachable aqueous phase; <0.7 nominal phase) normalized to total P in solid char
+model<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS)
+anova(model,model.LC)
+anova(model,model.int)
+#check VIF
+vif(model)
+#model assumptions
+hist(log10(data$Leachate_mg_P_per_g_P_in_solid_filt0.7))
+ggqqplot(residuals(model))
+plot(lmer(log10(Leachate_mg_P_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
+#interaction post hoc: 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
 
+
+#Molybdate reactive P filtered (leachable aqueous phase; <0.7 nominal phase) normalized to total P in solid char
+model<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data)
+model.BS<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Land_Coverage_Category+(1|Parent_ID), data=data)
+model.LC<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+(1|Parent_ID), data=data)
+model.int<-lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity+Land_Coverage_Category+(1|Parent_ID), data=data)
+anova(model,model.BS)
+anova(model,model.LC)
+anova(model,model.int)
+#check VIF
+vif(model)
+#model assumptions
+hist(log10(data$Leachate_mg_MBD_per_g_P_in_solid_filt0.7))
+ggqqplot(residuals(model))
+plot(lmer(log10(Leachate_mg_MBD_per_g_P_in_solid_filt0.7)~Burn_Severity*Land_Coverage_Category+(1|Parent_ID), data=data))
+#interaction post hoc: 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Unburned"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Low"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Burn_Severity="Moderate"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Douglas-fir forest"),adjust="tukey") 
+emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(Land_Coverage_Category="Sagebrush shrubland"),adjust="tukey")
 ```
 
-```{r Leachate fig}
-#two part figure for leachates: total particulate and total aqueous P
-
-#Leachable P (normalized by concentration of solid char) stacked barchart
+```{r leachate figs}
+#Leachable P (normalized by concentration of solid char) stacked barchart of total particulate and total aqueous P
 leach.fig<-data %>%
   select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)%>%
   mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
