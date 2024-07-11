@@ -1647,7 +1647,8 @@ XANES_spectra_rc_subset<-subset(XANES_spectra_rc_subset, variable!="Mg2")
 XANES_spectra_rc_subset$variable=factor(XANES_spectra_rc_subset$variable, levels= c("K", "Mg", "Al","Ca", "Na", "Fe", "Po"))
 
 XANES_stacked_spectra_rc <- ggplot(XANES_spectra_rc_subset, aes(x = eV, y = value, color = as.factor(variable))) +
-  geom_path() +
+  geom_path(size = 1.25) +
+  geom_vline(xintercept = 2152.3, linetype = "dashed", color = "black", size = 1) +  # Add dashed vertical line
   theme_classic() +
   scale_color_manual(values = c("black", "black", "black", "black", "black", "black", "black")) +
   theme(
@@ -1658,17 +1659,17 @@ XANES_stacked_spectra_rc <- ggplot(XANES_spectra_rc_subset, aes(x = eV, y = valu
   ) +
   ylab("") +
   xlab("Energy (eV)") +
-  xlim(2140, 2200) +
+  xlim(2140, 2190) +
   ylab("Normalized Absorption (arb. units)") +
-  geom_text(aes(x = 2190, y = 51, label = "K-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 43, label = "Mg-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 35, label = "Al-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 27, label = "Ca-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 19, label = "Na-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 11, label = "Fe-Pi"), size = 5) +
-  geom_text(aes(x = 2190, y = 4, label = "Po"), size = 5)
+  geom_text(aes(x = 2180, y = 51, label = "K-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 43, label = "Mg-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 35, label = "Al-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 27, label = "Ca-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 19, label = "Na-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 11, label = "Fe-Pi"), size = 5) +
+  geom_text(aes(x = 2180, y = 4, label = "Po"), size = 5)
 
-pdf(file = "../figures/XANES_stacked_spectra_rc.pdf", width = 3, height = 9) 
+pdf(file = "../figures/XANES_stacked_spectra_rc.pdf", width = 2.25, height = 9) 
 print(XANES_stacked_spectra_rc)
 dev.off()
 
@@ -1695,9 +1696,9 @@ BSLE_0013_solid_LCF_combined<-BSLE_0013_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF13<-ggplot(BSLE_0013_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Po" = "#ae6433", "Fe-Pi" = "#87745D"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "Po" = "#ae6433", "Fe-Pi" = "#493C32"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1707,9 +1708,11 @@ LCF13<-ggplot(BSLE_0013_solid_LCF_combined, aes(x = eV, y = value, color = compo
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank())  +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF13.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF13.pdf", width = 3, height = 3) 
 print(LCF13)
 dev.off()
 
@@ -1731,9 +1734,9 @@ BSLE_0007_solid_LCF_combined<-BSLE_0007_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF7<-ggplot(BSLE_0007_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Na-Pi" = "#87745D", "Ca-Pi" = "#C5AC87", "Al-Pi" = "#F1DCA7"), 
+        values = c("Sample" = "black", "Fit" = "#565e60", "Na-Pi" = "#C5AC87", "Ca-Pi" = "#87745D", "Al-Pi" = "#493C32"), 
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1743,9 +1746,11 @@ LCF7<-ggplot(BSLE_0007_solid_LCF_combined, aes(x = eV, y = value, color = compon
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF7.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF7.pdf", width = 3, height = 3) 
 print(LCF7)
 dev.off()
 
@@ -1768,9 +1773,9 @@ BSLE_0002_solid_LCF_combined<-BSLE_0002_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF2<-ggplot(BSLE_0002_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Na-Pi" = "#87745D", "Mg-Pi" = "#C5AC87", "Ca-Pi" = "#F1DCA7"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "Na-Pi" = "#C5AC87", "Mg-Pi" = "#87745D", "Ca-Pi" = "#493C32"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1780,9 +1785,11 @@ LCF2<-ggplot(BSLE_0002_solid_LCF_combined, aes(x = eV, y = value, color = compon
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF2.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF2.pdf", width = 3, height = 3) 
 print(LCF2)
 dev.off()
 
@@ -1805,9 +1812,9 @@ BSLE_0050_solid_LCF_combined<-BSLE_0050_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi (1)", "Ca-Pi (2)", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF50<-ggplot(BSLE_0050_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Mg-Pi" = "#87745D", "Ca-Pi (1)" = "#C5AC87", "Ca-Pi (2)" = "#F1DCA7"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "Mg-Pi" = "#C5AC87", "Ca-Pi (1)" = "#493C32", "Ca-Pi (2)" = "#87745D"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1817,9 +1824,11 @@ LCF50<-ggplot(BSLE_0050_solid_LCF_combined, aes(x = eV, y = value, color = compo
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.90), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF50.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF50.pdf", width = 3, height = 3) 
 print(LCF50)
 dev.off()
 
@@ -1842,9 +1851,9 @@ BSLE_0014_solid_LCF_combined<-BSLE_0014_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF14<-ggplot(BSLE_0014_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Po" = "#ae6433", "Fe-Pi" = "#87745D", "Ca-Pi" = "#C5AC87"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "Po" = "#ae6433", "Fe-Pi" = "#87745D", "Ca-Pi" = "#493C32"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1854,9 +1863,11 @@ LCF14<-ggplot(BSLE_0014_solid_LCF_combined, aes(x = eV, y = value, color = compo
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF14.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF14.pdf", width = 3, height = 3) 
 print(LCF14)
 dev.off()
 
@@ -1879,9 +1890,9 @@ BSLE_0011_solid_LCF_combined<-BSLE_0011_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF11<-ggplot(BSLE_0011_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "Mg-Pi" = "#87745D", "K-Pi" = "#C5AC87", "Ca-Pi" = "#F1DCA7"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "Mg-Pi" = "#C5AC87", "K-Pi" = "#87745D", "Ca-Pi" = "#493C32"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1891,9 +1902,11 @@ LCF11<-ggplot(BSLE_0011_solid_LCF_combined, aes(x = eV, y = value, color = compo
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF11.pdf", width = 4, height = 3) 
+pdf(file = "../figures/LCF11.pdf", width = 3, height = 3) 
 print(LCF11)
 dev.off()
 
@@ -1916,9 +1929,9 @@ BSLE_0072_solid_LCF_combined<-BSLE_0072_solid_LCF_combined %>%
   mutate(component = factor(component, levels = c("Sample", "Fit", "K-Pi", "Mg-Pi", "Al-Pi", "Ca-Pi (1)", "Ca-Pi (2)", "Na-Pi", "Fe-Pi", "Po")))
 
 LCF72<-ggplot(BSLE_0072_solid_LCF_combined, aes(x = eV, y = value, color = component, linetype = component)) +
-    geom_line() +
+    geom_line(size=1.5) +
     scale_color_manual(
-        values = c("Sample" = "black", "Fit" = "#565e60", "NH4-Pi" = "#87745D", "Ca-Pi (1)" = "#C5AC87", "Ca-Pi (2)" = "#F1DCA7"),
+        values = c("Sample" = "black", "Fit" = "#565e60", "NH4-Pi" = "#C5AC87", "Ca-Pi (1)" = "#493C32", "Ca-Pi (2)" = "#87745D"),
         name = NULL  # Remove the legend title
     ) +
     scale_linetype_manual(
@@ -1928,18 +1941,14 @@ LCF72<-ggplot(BSLE_0072_solid_LCF_combined, aes(x = eV, y = value, color = compo
     xlab("Energy (eV)") +
     xlim(2140, 2200) +
     ylab("Normalized Absorption (arb. units)") +
-    theme_classic()
-
-pdf(file = "../figures/LCF72.pdf", width = 4, height = 3) 
-print(LCF72)
-dev.off()
-
-
-LCF72<-ggplot()+ geom_line(data=BSLE_0072_solid_LCF , aes(x=eV, y=BSLE_0072_solid), color="black")+geom_line(data=BSLE_0072_solid_LCF , aes(x=eV, y=fit), color="gray", linetype = "dotted") + geom_line(data=BSLE_0072_solid_LCF , aes(eV, residual), color="gray")+ geom_line(data=BSLE_0072_solid_LCF , aes(eV, Pi_NH4_Mg_std.xmu), color="#9B9B7A")+ geom_line(data=BSLE_0072_solid_LCF, aes(eV, Pi_Apatite_Carbonate_std.xmu), color= "#F1DCA7")+geom_line(data=BSLE_0072_solid_LCF , aes(eV, Pi_Apatite_CaDefHydroxy_std.xmu), color="#F1DCA7", linetype = "dashed") + xlab("Energy (eV)") + xlim(2140, 2200) + ylab ("Normalized Absorption (arb. units)") + theme_classic()
+    theme_classic()+
+    theme(axis.text.y = element_blank()) +
+  theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
 pdf(file = "../figures/LCF72.pdf", width = 3, height = 3) 
 print(LCF72)
 dev.off()
+
 
 ```
 
