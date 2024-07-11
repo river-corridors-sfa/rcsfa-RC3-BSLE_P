@@ -1616,6 +1616,29 @@ plot(aov(log10(XANES_Po+1)~Burn_Severity*Land_Coverage_Category, data = data_sol
 emmeans::emmeans(model, pairwise~Burn_Severity,adjust="tukey") 
 ```
 
+###NMR and Ca-P
+```{r figure and stats}
+#see if there is a correlation between NMR extraction efficiency and Ca-Pi
+
+#figure
+XANES_stacked_spectra_rc <- ggplot(data_solids, aes(x = XANES_Pi_Ca, y = NMR_EE_P_perc)) + geom_point() + geom_smooth(method = "lm", se = FALSE) + theme_classic() 
+
+pdf(file = "../figures/XANES_stacked_spectra_rc.pdf", width = 2.25, height = 9) 
+print(XANES_stacked_spectra_rc)
+dev.off()
+
+#stats
+model<-lm(XANES_Pi_Ca ~ NMR_EE_P_perc, data = data_solids)
+summary(model)
+#model assumptions
+hist((data_solids$NMR_EE_P_perc))
+ggqqplot(residuals(model))
+#check normality of residuals 
+shapiro.test(data_solids$NMR_EE_P_perc)#p > 0.05 so can assume normality 
+#check homogeneity of variance assumption (homoscedastcity)
+plot(fitted(model),residuals(model))
+```
+
 ###XANES example figs
 ```{r example RC spectra fig}
 
