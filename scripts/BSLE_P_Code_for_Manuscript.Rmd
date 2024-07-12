@@ -374,7 +374,7 @@ data_solids <-data_solids %>%
 ```
 
 ####Additional Calcs
-```{r data_solids}
+```{r solids}
 #NMR extraction efficiency
 data_solids<-data_solids %>%
   mutate(NMR_EE_P_perc=Total_Extractable_P_mg_per_kg/Solid_P_mg_kg*100)
@@ -431,7 +431,7 @@ data_solids<-data_solids %>%
 
 ```
 
-```{r data}
+```{r leachates}
 #calculate leachate particulate concentrations as the difference between filtered and unfiltered
 data<-data %>%
   mutate(Leachate_Ca_mg_L_part = Leachate_Ca_mg_L_unfilt - Leachate_Ca_mg_L_filt0.7) %>%
@@ -562,6 +562,10 @@ data <- data %>%
   mutate(C.P.MolarRatio_filt0.7=(NPOC_mg_C_per_L/12.011)/(Leachate_P_mg_L_filt0.7/30.97))%>%
   mutate(N.P.MolarRatio_filt0.7=(TN_mg_N_per_L/14.01)/(Leachate_P_mg_L_filt0.7/30.97))
   
+#calculate non-reactive leachable P (in aqueous phase)
+data<-data %>%
+  mutate(Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7 = Leachate_mg_P_per_g_P_in_solid_filt0.7 - Leachate_mg_MBD_per_g_P_in_solid_filt0.7) %>%
+  mutate(Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7 = ifelse(Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7 < 0, 0, Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7))
 
 ```
 
@@ -724,6 +728,8 @@ P.Conc.leach<- data %>%
     Leachate_mg_P_per_g_P_in_solid_part_Standard_Deviation = sd(Leachate_mg_P_per_g_P_in_solid_part, na.rm = TRUE),
     Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_MBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
     Leachate_mg_MBD_per_g_P_in_solid_filt0.7_Standard_Deviation = sd(Leachate_mg_MBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7_Mean = mean(Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
+    Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7_Standard_Deviation = sd(Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7, na.rm = TRUE),
     Count = n()
   )
 
@@ -884,7 +890,7 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(L
 ```{r leachate figs}
 #Leachable P (normalized by concentration of solid char) stacked barchart of total particulate and total aqueous P
 leach.fig<-data %>%
-  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7)%>%
+  select(Burn_Severity, Land_Coverage_Category, Leachate_mg_P_per_g_P_in_solid_part, Leachate_mg_P_per_g_P_in_solid_filt0.7, Leachate_mg_MBD_per_g_P_in_solid_filt0.7, Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7) %>%
   mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Douglas-fir forest", "Douglas-fir Forest", Land_Coverage_Category)) %>%
   mutate(Land_Coverage_Category = if_else(Land_Coverage_Category == "Sagebrush shrubland", "Sagebrush Shrubland", Land_Coverage_Category))
 
@@ -895,7 +901,8 @@ leach.fig <- leach.fig %>%
     variable = case_when(
       variable == "Leachate_mg_P_per_g_P_in_solid_part" ~ "Particulate Total",
       variable == "Leachate_mg_P_per_g_P_in_solid_filt0.7" ~ "Aqueous Total",
-      variable == "Leachate_mg_MBD_per_g_P_in_solid_filt0.7" ~ "Aqueous Molybdate Reactive"),
+      variable == "Leachate_mg_MBD_per_g_P_in_solid_filt0.7" ~ "Aqueous Molybdate Reactive",
+          variable == "Leachate_mg_nonMBD_per_g_P_in_solid_filt0.7" ~ "Aqueous Non-Molybdate Reactive"),
     Annotation = case_when(
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "a",
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "a",
@@ -917,7 +924,14 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "a",
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "a",
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "a",
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "a"),
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "b",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "a",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "aaa",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "aaa",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "aaa",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "aaa",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "aaa",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "aaa"),
     x = case_when(
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
@@ -939,7 +953,14 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547"),
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547"),
     y = case_when(
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 300,
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 255,
@@ -961,7 +982,14 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 46,
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 28,
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 47,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44),
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 14,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 37,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 35,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 46,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 28,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 47,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44),
     Burn_Severity = case_when(
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
@@ -972,7 +1000,7 @@ leach.fig <- leach.fig %>%
       Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
       TRUE ~ as.character(Burn_Severity)),
     Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757", "Moderate 512-547", "High 589-757")),
-    variable = factor(variable, levels = c("Particulate Total", "Aqueous Total", "Aqueous Molybdate Reactive"))
+    variable = factor(variable, levels = c("Particulate Total", "Aqueous Total", "Aqueous Molybdate Reactive", "Aqueous Non-Molybdate Reactive"))
     )
 
 
@@ -1016,7 +1044,8 @@ leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fi
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Tilted 45 degrees
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)  # Add border around facets
     ) +
-    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
+    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")+
+  facet_grid(variable ~ Land_Coverage_Category)
 
 cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 4, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
 
