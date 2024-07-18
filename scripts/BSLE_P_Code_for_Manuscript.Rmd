@@ -6,19 +6,19 @@ output:
   pdf_document: default
   html_document: default
 ---
-##This is the code for figures and statistics from Barnes et al. (2024): Burn severity and land cover type control phosphorus concentration, molecular composition, and mobilization
-##Contact: Morgan E Barnes morgan.barnes@pnnl.gov
-##Make your environemnt
+##This is the code for figures and statistics from Barnes et al. (2024): Burn severity and vegetation type control phosphorus concentration, molecular composition, and mobilization
 
-#### Set Up
+##Contact: Morgan E. Barnes morgan.barnes@pnnl.gov
+
+
+
+## Set Up
 ```{r setup, include=FALSE, dev="CairoPNG"}
 rm(list=ls(all=T))
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-
-## Load libraries
+#### Load libraries
 ```{r library}
 
 require(pacman)
@@ -30,7 +30,7 @@ pacman::p_load(tidyverse,
               wesanderson,readxl,openxlsx, stringr, hablar,
               janitor, stringr, naniar, forstringr, reshape2, 
               emmeans, rstatix, ggpubr, Hmisc, corrplot, ggrepel, 
-              stringr, lme4, lmerTest, car, performance, vegan, psych, lavaan, semPlot, semptools, bestNormalize)
+              stringr, lme4, lmerTest, car, performance, vegan, psych, lavaan, semPlot, semptools,                          bestNormalize)
 
 
 ```
@@ -40,24 +40,21 @@ pacman::p_load(tidyverse,
 getwd()
 ```
 
-##Load data
-The datasets and metadata needed for P BSLE Gradient manuscript are:
-1) Chemistry datasets solids and liquids w/ all metadata that can be used directly from data package:
+##Load and clean data
+The datasets and metadata needed for this manuscript are:
+1) Chemistry datasets for solid chars and their leachates w/ all metadata that can be used directly from data package:
 This includes: 
-a) Total elemental composition of solids
-b) Total elemental composition of leachate particulate and filtered fractions
-c) Molybdate reactive P of leachate filtered fraction
-d) XANES of solids
-e) NMR of solids
+a) Total elemental composition of solid chars
+b) Total elemental composition of leachate particulate and 0.7 um filtered fractions
+c) Molybdate reactive P of leachate 0.7 um filtered fraction
+d) XANES of solid chars
+e) NMR of solid chars
 
 2) Chemistry data that needs post-data package processing after download from BSLE Data Package v3; this was done and provided within the BSLE P Manuscript Data Package:
-a) XANES of solids (spectra of samples and reference compounds and linear combination fits)
-b) NMR of solids (deconvolution)
+a) XANES of solid chars (spectra of samples and reference compounds and linear combination fits)
+b) NMR of solids (spectra of samples, spiking experiment spectra, and deconvolution)
 
-
-#### Download the BSLE Data Package
-
-Until we can get the API to work, do this manually and store on your local. I recommend storing inside your github folder and gitignoring the subfolder with the data in it by adding this to your .gitignore: 
+Downloading the BSLE Data Package is done manually and stored on your local computer. I recommend storing inside your github folder and gitignoring the subfolder with the data in it by adding this to your .gitignore: 
 `#data folder` 
 `data/`
 
@@ -949,12 +946,12 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "a",
       variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "b",
       variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "a",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "aaa",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "aaa",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "aaa",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "aaa",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "aaa",
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "aaa"),
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "a",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "a",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "b",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "a",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "a",
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "b"),
     x = case_when(
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
       variable == "Particulate Total" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
@@ -999,20 +996,20 @@ leach.fig <- leach.fig %>%
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 270,
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 125,
       variable == "Aqueous Total" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 30,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 14,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 37,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 35,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 46,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 28,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 47,
-      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 14,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 37,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 35,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 46,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 28,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 47,
-      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 44),
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 25,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 48,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 47,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 58,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 40,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 57,
+      variable == "Aqueous Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 56,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 90,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 100,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 83,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 30,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ 240,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 95,
+      variable == "Aqueous Non-Molybdate Reactive" & Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 28),
     Burn_Severity = case_when(
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
@@ -1052,15 +1049,20 @@ cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1
 
 #molybdate reactive P figure for SI
 leach.fig.mbd<-leach.fig %>%
-  filter(str_detect(variable, "Molybdate"))
+  filter(str_detect(variable, "Molybdate")) %>%
+  mutate(variable = case_when(
+    variable == "Aqueous Molybdate Reactive" ~ "Molybdate Reactive",
+    variable == "Aqueous Non-Molybdate Reactive" ~ "Non-Molybdate Reactive",
+    TRUE ~ variable  # Keep all other values unchanged
+  ))
+
 
 leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fill = Land_Coverage_Category)) +
     geom_boxplot(show.legend = FALSE) +
     theme_classic() +
-    ylab(expression(paste(atop("Leachable Aqueous Molybdate", "Reactive P (mg g"^"-1"*")")))) +
+    ylab(expression(paste("Leachable Aqueous P (mg g"^"-1"*")"))) +
     xlab("Burn Severity") +
     scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
-    facet_grid(. ~ Land_Coverage_Category, scales = "free") +
     scale_x_discrete(labels = split_labels_with_parentheses) +
     theme(
         text = element_text(size = 15),
@@ -1068,9 +1070,9 @@ leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fi
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)  # Add border around facets
     ) +
     geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")+
-  facet_grid(variable ~ Land_Coverage_Category)
+  facet_grid(variable ~ Land_Coverage_Category, scales = "free_x")
 
-cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 4, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
+cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 6, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
 
 
 ```
