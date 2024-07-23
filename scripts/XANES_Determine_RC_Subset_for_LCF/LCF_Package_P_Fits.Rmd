@@ -13,7 +13,7 @@ output: html_document
 #Reminder that R can't overwrite files with the same name so make sure all sample and reference compounds have unique names
 #For samples with -0.7filt, the period between 0 and 7 was removed in the imported files and File_BS_Norm_Parameters file 
 #This script was run locally, so will be need to be modified for future use
-# .xmu files for samples and reference compounds can be downloaded from Grieger et al. (2023): BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
+# .xmu files for samples and reference compounds can be downloaded from Grieger et al. (2022): BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
 # Background subtractions and normalization parameters can be found in the manuscript-level data package (Barnes et al., in prep)
 
 
