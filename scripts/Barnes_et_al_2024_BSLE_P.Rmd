@@ -6,7 +6,7 @@ output:
   pdf_document: default
   html_document: default
 ---
-##This is the code for figures and statistics from Barnes et al. (2024): Burn severity transforms vegetation char phosphorus composition and alters its mobilization 
+##This is (a PRIOR version of) the code for figures and statistics from Barnes et al. (2024): Burn severity transforms vegetation char phosphorus composition and alters its mobilization 
 ##Contact: Morgan E Barnes morgan.barnes@pnnl.gov or mebarn4@gmail.com
 
 

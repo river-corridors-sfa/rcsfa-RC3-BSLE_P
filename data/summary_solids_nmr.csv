@@ -1,8 +1,8 @@
 "","Burn_Severity","Land_Coverage_Category","Mean","Standard_Deviation","Count"
-"1","High","Douglas-fir Forest",41.5160089411344,16.1559304098537,4
-"2","Low","Douglas-fir Forest",44.93969715353,14.0759359301919,5
-"3","Low","Sagebrush Shrubland",74.4530834160865,13.3420221968889,2
-"4","Moderate","Douglas-fir Forest",43.5407374402731,21.5685899633124,3
-"5","Moderate","Sagebrush Shrubland",60.9704025226128,9.81372342735209,2
-"6","Unburned","Douglas-fir Forest",87.36157928456,6.99767852134875,2
-"7","Unburned","Sagebrush Shrubland",105.928454051321,NA,1
+"1","High","Douglas-fir forest",41.5160089411344,16.1559304098537,4
+"2","Low","Douglas-fir forest",44.93969715353,14.0759359301919,5
+"3","Low","Sagebrush shrubland",74.4530834160865,13.3420221968889,2
+"4","Moderate","Douglas-fir forest",43.5407374402731,21.5685899633124,3
+"5","Moderate","Sagebrush shrubland",60.9704025226128,9.81372342735209,2
+"6","Unburned","Douglas-fir forest",87.36157928456,6.99767852134875,2
+"7","Unburned","Sagebrush shrubland",105.928454051321,NA,1
