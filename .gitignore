@@ -48,20 +48,113 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-#Adding folders to ignore
-Archive/
-data/Archive/
-data/BSLE_Data_Package_v3
-data/summary_leachate_conc.csv
-data/summary_NMR_spike.csv
-data/summary_solids_conc.csv
-data/summary_solids_nmr.csv
-data/solids_nmrEE.csv
-data/summary_stoich.csv
-figures/Archive
-figures/leach.Pnorm.conc.mbd.pdf
-figures/leachPnorm.conc.pdf
-figures/pH_BS.pdf
-figures/aq_pH.pdf
-figures/LCF72.pdffigures/LCF11.pdffigures/LCF14.pdffigures/LCF50.pdffigures/LCF2.pdffigures/LCF7.pdffigures/LCF13.pdffigures/XANES_stacked_spectra_rc.pdffigures/SB.mod.xanes.pdffigures/SB.low.xanes.pdffigures/SB.raw.xanes.pdffigures/DF.high.xanes.pdffigures/DF.mod.xanes.pdffigures/DF.low.xanes.pdffigures/DF.raw.xanes.pdffigures/xanes.legend.pdffigures/XANES_stacked_spectra_sb.pdffigures/XANES_stacked_spectra_df.pdffigures/mono_die_loss.pdffigures/SB.mod.nmr.pdffigures/SB.low.nmr.pdffigures/SB.raw.nmr.pdffigures/DF.high.nmr.pdffigures/DF.mod.nmr.pdffigures/DF.low.nmr.pdffigures/DF.raw.nmr.pdffigures/nmr.legend.pdffigures/NMR_stacked_spectra_sb.pdffigures/NMR_stacked_spectra_df.pdffigures/solid.P.BS.fig.pdffigures/leach.Pnorm.conc.mbd2.pdffigures/Char_Photos_Figure.pdffigures/Char_Photos_Figure.pptxfigures/XANES_LCF_individual_sample_tablefigures/XANES_LCF_individual_sample_tablefigures/pH_fig.pdffigures/pH_fig.pptxfigures/Path_Analysis_Conceptual_Model.pdffigures/Path_Analysis_Conceptual_Model.pptxfigures/Path_Analysis.pdffigures/Path_Analysis.pptxfigures/XANES_Spectra_Pie.pdffigures/XANES_Spectra_Pie.pptxfigures/NMR_Spectra_Pie.pdffigures/NMR_Spectra_Pie.pptxfigures/LCF_Eample_Samples_Tall.pdffigures/LCF_Eample_Samples_Tall.pptxfigures/NMR_Methods.pdffigures/NMR_Methods.pptxfigures/NMR_spiking.pdffigures/NMR_spiking.pptxfigures/NMR_regions.pdffigures/NMR_regions.pptxfigures/NMR region example sample.pdffigures/spike example figure_solid 11.pdffigures/spike example figure_solid 11.mnovafigures/LCF_Example_Samples.pptxfigures/Graphical_Abstract_final.pptxfigures/Graphical_Abstract_final.pdffigures/leach.Pnorm.conc copy.pdffigures/Leachate_P_Conc.pdffigures/Leachate_P_Conc.pptxfigures/Solid_P_Conc.pdffigures/Solid_P_Conc.pptxfigures/conceptual_model.pdffigures/conceptual_model.pptxfigures/Graphical_Abstract.pdffigures/Graphical_Abstract.pptxfigures/burn_conditions_pca.pdffigures/Mono_Di_Percent_Loss.pdffigures/Mono_Di_perc_loss_fig.pdffigures/Mono_Di_Percent_Loss.pngfigures/XANES_RefCompd_Table_SubsetforLCF.xlsxfigures/SEM3.pdffigures/Stoichiometry_table.xlsxfigures/LCF_Example_Samples.pdffigures/each.charnorm.conc.pdffigures/p_pa.pdffigures/SEM1.pdffigures/p_pa2.pdffigures/corr_element_char_sage.pdffigures/corr_element_char_doug.pdffigures/corr_element_char_allecosystem.pdffigures/solid.element.corr.all.pdffigures/leach.conc.pdffigures/Leachate_stacked_bar.pdffigures/Leachate.unfilt.total.P.BS.boxplot.pdffigures/Leachate.filt0.7.total.P.BS.boxplot.pdffigures/Leachate.total.P.BS.boxplot.pdffigures/MBD.BS.fig.pdffigures/Solid_Conc_Table.xlsxfigures/leachate_conc.pptx
-scripts/Archive
+# Mac OS Files
+.DS_Store
+
+# Adding folders to ignore - commented these out so they remain in GitHub for now, but these are the files to exclude during publishing
+# data/Archive/
+# data/BSLE_Data_Package_v3
+# data/summary_leachate_conc.csv
+# data/summary_NMR_spike.csv
+# data/summary_solids_conc.csv
+# data/summary_solids_nmr.csv
+# data/solids_nmrEE.csv
+# data/summary_stoich.csv
+# figures/Archive
+# figures/leach.Pnorm.conc.mbd.pdf
+# figures/leachPnorm.conc.pdf
+# figures/pH_BS.pdf
+# figures/aq_pH.pdf
+# figures/LCF72.pdf
+# figures/LCF11.pdf
+# figures/LCF14.pdf
+# figures/LCF50.pdf
+# figures/LCF2.pdf
+# figures/LCF7.pdf
+# figures/LCF13.pdf
+# figures/XANES_stacked_spectra_rc.pdf
+# figures/SB.mod.xanes.pdf
+# figures/SB.low.xanes.pdf
+# figures/SB.raw.xanes.pdf
+# figures/DF.high.xanes.pdf
+# figures/DF.mod.xanes.pdf
+# figures/DF.low.xanes.pdf
+# figures/DF.raw.xanes.pdf
+# figures/xanes.legend.pdf
+# figures/XANES_stacked_spectra_sb.pdf
+# figures/XANES_stacked_spectra_df.pdf
+# figures/mono_die_loss.pdf
+# figures/SB.mod.nmr.pdf
+# figures/SB.low.nmr.pdf
+# figures/SB.raw.nmr.pdf
+# figures/DF.high.nmr.pdf
+# figures/DF.mod.nmr.pdf
+# figures/DF.low.nmr.pdf
+# figures/DF.raw.nmr.pdf
+# figures/nmr.legend.pdf
+# figures/NMR_stacked_spectra_sb.pdf
+# figures/NMR_stacked_spectra_df.pdf
+# figures/solid.P.BS.fig.pdf
+# figures/leach.Pnorm.conc.mbd2.pdf
+# figures/Char_Photos_Figure.pdf
+# figures/Char_Photos_Figure.pptx
+# figures/XANES_LCF_individual_sample_table
+# figures/XANES_LCF_individual_sample_table
+# figures/pH_fig.pdf
+# figures/pH_fig.pptx
+# figures/Path_Analysis_Conceptual_Model.pdf
+# figures/Path_Analysis_Conceptual_Model.pptx
+# figures/Path_Analysis.pdf
+# figures/Path_Analysis.pptx
+# figures/XANES_Spectra_Pie.pdf
+# figures/XANES_Spectra_Pie.pptx
+# figures/NMR_Spectra_Pie.pdf
+# figures/NMR_Spectra_Pie.pptx
+# figures/LCF_Eample_Samples_Tall.pdf
+# figures/LCF_Eample_Samples_Tall.pptx
+# figures/NMR_Methods.pdf
+# figures/NMR_Methods.pptx
+# figures/NMR_spiking.pdf
+# figures/NMR_spiking.pptx
+# figures/NMR_regions.pdf
+# figures/NMR_regions.pptx
+# figures/NMR region example sample.pdf
+# figures/spike example figure_solid 11.pdf
+# figures/spike example figure_solid 11.mnova
+# figures/LCF_Example_Samples.pptx
+# figures/Graphical_Abstract_final.pptx
+# figures/Graphical_Abstract_final.pdf
+# figures/leach.Pnorm.conc copy.pdf
+# figures/Leachate_P_Conc.pdf
+# figures/Leachate_P_Conc.pptx
+# figures/Solid_P_Conc.pdf
+# figures/Solid_P_Conc.pptx
+# figures/conceptual_model.pdf
+# figures/conceptual_model.pptx
+# figures/Graphical_Abstract.pdf
+# figures/Graphical_Abstract.pptx
+# figures/burn_conditions_pca.pdf
+# figures/Mono_Di_Percent_Loss.pdf
+# figures/Mono_Di_perc_loss_fig.pdf
+# figures/Mono_Di_Percent_Loss.png
+# figures/XANES_RefCompd_Table_SubsetforLCF.xlsx
+# figures/SEM3.pdf
+# figures/Stoichiometry_table.xlsx
+# figures/LCF_Example_Samples.pdf
+# figures/each.charnorm.conc.pdf
+# figures/p_pa.pdf
+# figures/SEM1.pdf
+# figures/p_pa2.pdf
+# figures/corr_element_char_sage.pdf
+# figures/corr_element_char_doug.pdf
+# figures/corr_element_char_allecosystem.pdf
+# figures/solid.element.corr.all.pdf
+# figures/leach.conc.pdf
+# figures/Leachate_stacked_bar.pdf
+# figures/Leachate.unfilt.total.P.BS.boxplot.pdf
+# figures/Leachate.filt0.7.total.P.BS.boxplot.pdf
+# figures/Leachate.total.P.BS.boxplot.pdf
+# figures/MBD.BS.fig.pdf
+# figures/Solid_Conc_Table.xlsx
+# figures/leachate_conc.pptx
+# scripts/Archive
