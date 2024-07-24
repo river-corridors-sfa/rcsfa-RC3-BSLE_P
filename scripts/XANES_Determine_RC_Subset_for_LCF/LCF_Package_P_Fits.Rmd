@@ -9,12 +9,21 @@ output: html_document
 ####Overview
 
 #All sample and standard spectra scans were averaged in Sam's pack, imported to Athena for energy shift, and exported as .xmu data file (non-normalized spectra). Normalization parameters in .xmu files are only estimates and do not necessarily represent the best background subtraction and normalization parameters
+
 #Make sure to have a csv with background subtraction and normalization details for the Athena fit function. This file is named File_BS_Norm_Parameters.csv
+
 #Reminder that R can't overwrite files with the same name so make sure all sample and reference compounds have unique names
+
+#Your main folder (working directory set up to this) will need to have all sample spectra, reference compound spectra, and File_BS_Norm_Parameters.csv
+
+#You will need to have a folder titled "plot" in the main folder that will be used for output
+
+#You will need to have a folder titled "Athena_Code_Output" and a "plot" folder within it to be used for outputs
+
 #For samples with -0.7filt, the period between 0 and 7 was removed in the imported files and File_BS_Norm_Parameters file 
-#This script was run locally, so will be need to be modified for future use
+
 # .xmu files for samples and reference compounds can be downloaded from Grieger et al. (2022): BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
-# Background subtractions and normalization parameters can be found in the manuscript-level data package (Barnes et al., in prep)
+
 
 
 #LCF package details: https://cran.r-project.org/web/packages/LCF/LCF.pdf
