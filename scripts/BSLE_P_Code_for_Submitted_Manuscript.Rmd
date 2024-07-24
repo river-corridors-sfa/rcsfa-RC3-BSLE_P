@@ -86,10 +86,10 @@ pH <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_pH.csv")
 NMR_spectra <- read_csv("../data/BSLE_Data_Package_v3/v3_BSLE_Data/BSLE_31P-NMR.csv")
 
 #chemical data from BSLE P manuscript data package
-NMR <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Deconvolutions.csv") %>%
+NMR <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_NMR/NMR_Deconvolutions.csv") %>%
   filter(Degradation_Corrected == 'Yes')
-NMR_Spikes <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Spike_ppm.csv") 
-NMR_Species_Per <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/NMR_Species_Percent.csv") 
+NMR_Spikes <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_NMR/NMR_Spike_ppm.csv") 
+NMR_Species_Per <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_NMR/NMR_Species_Percent.csv") 
 XANES <- read.csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/P-XANES_LCF.csv")  
 XANES_spectra <- read_csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Samples/xanes_example_spectra.csv") #this file was generated using XANES_Spectra_Merging script 
 XANES_rc_spectra <- read_csv("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P_XANES_Reference_Compounds/xanes_example_referencecompounds.csv") #this file was generated using XANES_Spectra_Merging script 
