@@ -1,0 +1,106 @@
+---
+title: "BSLE Mass Loss"
+author: "AMP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This script pulls in the data and code from Myers-Pigg et al., 2024 doi:10.15485/2327028  https://data.ess-dive.lbl.gov/view/doi%3A10.15485%2F2327028 to generate the file ‘bsle_all_merged.rda’ which contains the mass loss calculations in it. Please follow the instructions in the data package from Manuscript_Workflow_Instructions.pdf to orient the data files and scripts correctly in your working directory. 
+
+Here, we put the data package downloads and folders in our github using the folder structure as detailed in Manuscript_Workflow_Instructions.pdf
+
+# Set up Libraries 
+
+```{r libraries}
+library(tidyverse)
+```
+
+# Source code for creating ‘bsle_all_merged.rda’
+
+```{r source BSLE_Data_Prep_For_Manuscripts.rmd}
+
+source("../v2_Processing_Scripts/v2_BSLE_Data_Prep_For_Manuscripts.rmd")
+
+```
+
+# Import sample list for samples used in P paper 
+
+```{r p samples}
+
+p_meta <- read_csv("~/GitHub/rcsfa-RC3-BSLE_P/data/data_solids.csv") %>%
+  dplyr::select(Parent_ID, Land_Coverage_Category, Burn_Treatment, Burn_Severity, Feedstock_Status, Char_Type, Burn_Duration, Char_Max_Temp)
+```
+
+# Isolate columns of interest
+
+```{r select columns for mass loss}
+bsle_mass_loss_forP <- bsle_all_merged %>%
+  dplyr::select(Parent_ID, estimate_perc_mass_loss) %>%
+  inner_join(p_meta, by= "Parent_ID") %>% 
+  distinct() %>%
+  #Add in annotations/mutate metadata for plotting:
+   mutate(
+     Annotation = case_when(
+       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "",
+       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "",
+       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "",
+       Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "",
+       Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "",
+       Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "",
+       Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ ""),
+    x = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547"),
+    y = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ 2.8,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ 3.8,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ 3.6,
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ 9.2,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~2.35,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ 6.9,
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ 17.5),
+    Burn_Severity = case_when(
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Low" ~ "Low 295-627",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "Moderate" ~ "Moderate 589-757",
+      Land_Coverage_Category == "Douglas-fir Forest" & Burn_Severity == "High" ~ "High 589-757",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Unburned" ~ "Unburned 25",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Low" ~ "Low 308-502",
+      Land_Coverage_Category == "Sagebrush Shrubland" & Burn_Severity == "Moderate" ~ "Moderate 512-547",
+      TRUE ~ as.character(Burn_Severity)),
+    Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
+                                                     "Moderate 512-547", "High 589-757")))
+
+saveRDS(bsle_mass_loss_forP, "~/GitHub/rcsfa-RC3-BSLE_P/data/mass_loss_data.csv") #remove me before publishing in data package, just saving this for morgan for now 
+```
+
+#Figure
+```{r functions for figures}
+split_labels_with_parentheses <- function(x) {
+  sapply(x, function(label) {
+    parts <- strsplit(as.character(label), " ")[[1]]
+    if (length(parts) > 1) {
+      paste(parts[1], "\n", paste0("(", parts[2], " °C)"), sep = "")
+    } else {
+      label
+    }
+  })
+}
+```
+
+```{r figure}
+ggplot(bsle_mass_loss_forP, aes(x=Burn_Severity, y= estimate_perc_mass_loss, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab("Estimated Percentage Mass Loss (%)")+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+
+  scale_x_discrete(labels = split_labels_with_parentheses) +
+    theme(
+        text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
+    geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
+
+```
+

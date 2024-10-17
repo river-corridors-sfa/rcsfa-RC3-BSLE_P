@@ -158,3 +158,4 @@ rsconnect/
 # figures/Solid_Conc_Table.xlsx
 # figures/leachate_conc.pptx
 # scripts/Archive
+data/.DS_Store
