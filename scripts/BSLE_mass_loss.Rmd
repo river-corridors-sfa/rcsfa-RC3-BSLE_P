@@ -76,7 +76,7 @@ bsle_mass_loss_forP <- bsle_all_merged %>%
     Burn_Severity = factor(Burn_Severity, levels = c("Unburned 25", "Low 295-627", "Low 308-502", "Moderate 589-757",
                                                      "Moderate 512-547", "High 589-757")))
 
-saveRDS(bsle_mass_loss_forP, "~/GitHub/rcsfa-RC3-BSLE_P/data/mass_loss_data.csv") #remove me before publishing in data package, just saving this for morgan for now 
+saveRDS(bsle_mass_loss_forP, "~/GitHub/rcsfa-RC3-BSLE_P/data/mass_loss_data.rds") #remove me before publishing in data package, just saving this for morgan for now 
 ```
 
 #Figure
