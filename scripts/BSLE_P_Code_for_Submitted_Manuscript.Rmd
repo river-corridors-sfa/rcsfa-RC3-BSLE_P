@@ -358,12 +358,12 @@ data_solids <- data %>%
 data_solids$Burn_Severity=factor(data_solids$Burn_Severity, levels= c("Unburned", "Low", "Moderate", "High"))
 
 #XANES
-XANES_clean<- Meta %>%
+XANES_clean <- Meta %>%
   full_join(XANES_clean, by = 'Parent_ID') %>%
   filter(str_detect(Sample_ID, "A")) %>%
   mutate(Burn_Treatment = as.character(Burn_Treatment)) %>%
   filter(Burn_Treatment %in% c("burn table" , "raw")) %>%
-  filter(Land_Coverage_Category %in% c("Douglas-fir Forest" , "Sagebrush Shrubland")) %>%
+  filter(Land_Coverage_Category %in% c("Douglas-fir forest" , "Sagebrush shrubland")) %>%
   filter(!is.na(FilterSize))
 ```
 
@@ -511,8 +511,8 @@ data<-data %>%
 
 ```{r save csv}
 #save csv of final collated data with manipulations
-write.csv(data, "../data/data.csv", row.names = FALSE) #all data
-write.csv(data_solids, "../data/data_solids.csv", row.names = FALSE) #solids only
+#write.csv(data, "../data/data.csv", row.names = FALSE) #all data
+#write.csv(data_solids, "../data/data_solids.csv", row.names = FALSE) #solids only
 ```
 
 ```{r functions for figures}
@@ -554,6 +554,7 @@ summary_bs <- data_solids %>%
   )
 
 ```
+
 
 ```{r solids and leachates}
 #solid elemental concentrations, NMR, and XANES summary
@@ -651,7 +652,7 @@ summary_solids_conc <- data_solids %>%
     Count = n()
   )
 
-write.csv(summary_solids_conc, "../data/summary_solids_conc.csv") 
+#write.csv(summary_solids_conc, "../data/summary_solids_conc.csv") 
 
 
 #NMR extraction efficiency
@@ -663,7 +664,7 @@ summary_solids_nmrEE <- data_solids %>%
     Count = n()
   )
 
-write.csv(summary_solids_nmrEE, "../data/summary_solids_nmrEE.csv") 
+#write.csv(summary_solids_nmrEE, "../data/summary_solids_nmrEE.csv") 
 
 
 #Chemical shift of spiked compounds into NMR experiments
@@ -677,7 +678,7 @@ summary_NMR_spike <- summary_NMR_spike %>%
     Count = n()
   )
 
-write.csv(summary_NMR_spike, "../data/summary_NMR_spike.csv")
+#write.csv(summary_NMR_spike, "../data/summary_NMR_spike.csv")
 
 
 #leachate concentrations
@@ -697,7 +698,7 @@ P.Conc.leach<- data %>%
     Count = n()
   )
 
-write.csv(P.Conc.leach, "../data/summary_leachate_conc.csv")
+#write.csv(P.Conc.leach, "../data/summary_leachate_conc.csv")
 
 
 #elemental stoichiometry
@@ -778,7 +779,7 @@ stoich_mean <- stoich %>%
     value_sd = sd(value, na.rm = TRUE))
 
 #write csv
-write.csv(stoich_mean, "../data/summary_stoich.csv")
+#write.csv(stoich_mean, "../data/summary_stoich.csv")
 ```
 
 ##Solid Char 
@@ -1982,10 +1983,270 @@ p_pa2 <- mark_sig(p_pa, fit)
 plot(p_pa2)
 ```
 
+##Burn Severity
+```{r burn severity}
+#relate burn severity to temp and duration
+
+ggplot(data_solids, aes(x = Char_Max_Temp, y = Burn_Duration)) +
+  geom_jitter(aes(color = Burn_Severity), width = 20, height = 20, size = 2, alpha = 0.7) +  # Color points by Burn_Severity
+  geom_smooth(method = "lm", se=FALSE, color = "black") +  # Single best-fit line for all points
+  theme_classic() +
+  ylab("Burn Duration (s)") +
+  xlab("Temperature (C)") +
+  facet_grid(. ~ Land_Coverage_Category)+scale_color_manual(values=c("#0a9396","#ffba08", "#e85d04","#9d0208"))+
+  labs(color = "Burn Severity")
+
+SB <-subset(data_solids, Land_Coverage_Category=="Sagebrush Shrubland")
+DF <-subset(data_solids, Land_Coverage_Category=="Douglas-fir Forest")
+
+model<-lm(Char_Max_Temp~Burn_Duration, data = SB)
+summary(model)
+
+model<-lm(Char_Max_Temp~Burn_Duration, data = DF)
+summary(model)
+
+model<-anova(Burn_Severity~Char_Max_Temp + Burn_Duration, data = DF)
+summary(model)
+
+#burn duration and temp with burn severity
+#veg together
+ggplot(data_solids, aes(x=Burn_Severity, y=Burn_Duration))+geom_boxplot(show.legend=FALSE)+theme_classic()+ ylab("Burn Duration") + xlab("Burn Severity")
+
+ggplot(data_solids, aes(x=Burn_Severity, y=Char_Max_Temp))+geom_boxplot(show.legend=FALSE)+theme_classic()+ ylab("Burn Duration") + xlab("Burn Severity")
+
+#veg split
+ggplot(data_solids, aes(x=Burn_Severity, y=Burn_Duration, fill = Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ ylab("Burn Duration") + xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")
+
+model<-aov(Burn_Duration~Burn_Severity, data = SB)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+
+model<-aov(Burn_Duration~Burn_Severity, data = DF)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+
+model<-aov(Burn_Duration~Burn_Severity, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+
+model<-aov(Char_Max_Temp~Burn_Severity, data = SB)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+
+model<-aov(Char_Max_Temp~Burn_Severity, data = DF)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+
+model<-aov(Char_Max_Temp~Burn_Severity, data = data_solids)
+summary(model)
+#model assumptions
+hist(log10(data_solids$Solid_P_mg_kg))
+ggqqplot(residuals(model))
+plot(fitted(model),residuals(model))
+```
+
+```{r Elemental Concentration}
+#solids
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_Ca_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_Fe_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_Al_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_K_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_Mg_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_Na_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_S_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids, aes(x=Burn_Severity, y=Solid_C_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
+
+ggplot(data_solids, aes(x=Burn_Severity, y=Solid_N_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ xlab("Burn Severity")+scale_fill_manual(values=c("#9B9B7A","#FFCB69"))+facet_grid(.~Land_Coverage_Category, scales = "free")+scale_x_discrete(labels = split_labels_with_parentheses) + theme(text = element_text(size = 15),
+axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), panel.border = element_rect(color = "black", fill = NA, linewidth = 1))
 
 
 
 
+#leachates
+ggplot(data, aes(x = Burn_Severity, y = Leachate_Ca_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_Mg_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_Fe_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_Al_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_Na_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_K_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = Leachate_S_mg_L_filt0.7, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = NPOC_mg_C_per_L, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+
+ggplot(data, aes(x = Burn_Severity, y = TN_mg_N_per_L, fill = Land_Coverage_Category)) +
+    geom_boxplot(show.legend = FALSE) +
+    theme_classic() +
+    xlab("Burn Severity") +
+    scale_fill_manual(values = c("#9B9B7A","#FFCB69")) +
+    scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
+```
+
+
+##PCA
+```{r}
+data_wide <- stoich_mean %>%
+    select(-value_sd) %>%  # Remove the value_sd column
+    group_by(Burn_Severity, Land_Coverage_Category, filter, variable) %>%
+    pivot_wider(
+        names_from = variable,
+        values_from = value_mean
+    )
+
+library(factoextra)
+
+data <- data_wide %>%
+  select(Burn_Severity, Land_Coverage_Category, filter, contains(":P")) %>%
+  select(-'C:P', -'N:P', -'Na:P', -'Al:P') %>%
+  mutate_if(is.character, as.factor)  # Convert character columns to factors
+
+# Check for NAs and remove rows with NAs in numeric columns for PCA
+pca_data_clean <- na.omit(data %>% select(where(is.numeric)))
+
+# Perform PCA
+pca_result <- prcomp(pca_data_clean[4:8], scale. = TRUE)  # No need to exclude columns, as only numeric columns are selected
+
+# Create a data frame with PCA results
+pca_results_df <- as.data.frame(pca_result$x)
+pca_results_df <- cbind(pca_data_clean[, c("Burn_Severity", "Land_Coverage_Category", "filter")], pca_results_df)
+
+# Plot PCA
+pca_plot <- ggplot(pca_results_df, aes(x = PC1, y = PC2, color = Burn_Severity, shape = filter)) +
+  geom_point(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "PCA of Nutrient Data",
+       x = "Principal Component 1",
+       y = "Principal Component 2") +
+  scale_color_discrete(name = "Burn Severity") +
+  scale_shape_discrete(name = "Sample Type") +
+  theme(legend.position = "right")
+
+
+
+#old code
+data_solids_corr <- data_solids %>%
+  rename_with(
+    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
+    starts_with("Solid_")) %>%
+  select(Burn_Severity, Land_Coverage_Category, P, C, N, Ca, Mg, Na, Fe, Al, S, K) %>%
+  na.omit(data_solids)
+
+pca <- prcomp(data_solids_corr[3:12], center=TRUE, scale=TRUE)
+
+##Extract PCA information, including loadings, sample scores, and component percentages
+eigval <- pca$sdev^2
+eigvec <- data.frame(pca$rotation)
+loadings1 <- eigvec$PC1*sqrt(eigval[1])
+loadings2 <- eigvec$PC2*sqrt(eigval[2])
+loadings <- cbind(loadings1, loadings2)
+
+colnames(loadings)<-c('PC1','PC2')
+rownames(loadings)<-colnames(data_solids_corr[3:12])
+loadingstest<-as.data.frame(loadings)
+pca_out <- as.data.frame(pca$x)
+percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
+percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
+
+
+xscale <- 10
+yscale <- 10
+ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_solids_corr$Land_Coverage_Category,shape=data_solids_corr$Burn_Severity),size=3)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)
+
+
+
+
+
+
+# Create the scatter plot
+ggplot(stoich_mean, aes(x = 1, y = value_mean, color = Burn_Severity, shape = Land_Coverage_Category)) +
+  geom_point(size = 3) +  # Adjust point size as needed
+  labs(title = "Visualization of value_mean with Burn Severity and Land Coverage",
+       x = "Sample",
+       y = "value_mean") +
+  theme_minimal() +
+  
+  # Add circles around the 3 filter categories
+  stat_ellipse(aes(group = filter), type = "norm", linetype = "dashed") +
+  
+  # Customize the colors, shapes, and theme if needed
+  scale_color_manual(values = c("red", "blue", "green", "black"))  # Adjust colors for Burn_Severity categories if desired
+
+```
 
 
 
