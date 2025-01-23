@@ -51,8 +51,11 @@ rsconnect/
 # Mac OS Files
 .DS_Store
 
+# files not needed in review 
+do not commit/
+
 # Adding folders to ignore - commented these out so they remain in GitHub for now, but these are the files to exclude during publishing
- /data/Archive/
+ data/Archive/
  data/BSLE_Data_Package_v3
  data/summary_leachate_conc.csv
  data/summary_NMR_spike.csv
@@ -158,7 +161,6 @@ rsconnect/
  figures/Solid_Conc_Table.xlsx
  figures/leachate_conc.pptx
  scripts/Archive
-/data/.DS_Store
-
-figures/.DS_Store
-figures/Final_Figures_for_Publication/.DS_Store
+ data/.DS_Store
+ figures/.DS_Store
+ figures/Final_Figures_for_Publication/.DS_Store
