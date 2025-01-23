@@ -104,3 +104,9 @@ ggplot(bsle_mass_loss_forP, aes(x=Burn_Severity, y= estimate_perc_mass_loss, fil
 
 ```
 
+```{r summary stats}
+bsle_mass_loss_forP %>% 
+  group_by(Land_Coverage_Category, Burn_Severity) %>%
+ summarise(mean = mean(estimate_perc_mass_loss), sd = sd(estimate_perc_mass_loss))
+```
+
