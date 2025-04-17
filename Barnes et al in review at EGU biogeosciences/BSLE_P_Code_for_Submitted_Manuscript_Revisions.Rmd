@@ -2166,13 +2166,14 @@ facet_text <- data.frame(
   label = c("p~'<'~0.001", "p~'<'~0.001", "R^2~'='~0.45", "R^2~'='~0.97"))
 
 #relationship between P in aqueous fraction and pH
-aq_pH<-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=Burn_Severity))+
+aq_pH <-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=Burn_Severity))+
   geom_point() + geom_smooth(method = "lm", se = FALSE, na.rm = TRUE, fullrange = TRUE, aes(group=1), color = "black")+
   theme_classic()+
   labs(title = "b)") +
   ylab(expression(paste(Aqueous~P~(mg~g^-1), sep="")))+ 
   xlab("pH")+facet_grid(.~Land_Coverage_Category, scales = "free")+
-  theme(text = element_text(size = 15), 
+  theme(text = element_text(size = 18), 
+        title = element_text(size = 18), 
         legend.position ="bottom",
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1))+
   scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208")) +
@@ -2245,10 +2246,12 @@ pH_BS<-ggplot(data_pH, aes(x=Burn_Severity, y=pH, fill = Land_Coverage_Category)
   geom_boxplot()+
   theme_classic()+ 
   xlab("Burn Severity")+ 
+  ylab("\n pH")+
   scale_fill_manual(values=c("lightgray","lightgray"))+
   labs(title = "a)") +
   facet_grid(.~Land_Coverage_Category, scales = "free") + 
   theme(text = element_text(size = 18),
+        title = element_text(size = 18), 
         legend.position = "none",
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) + 
   geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain") 
@@ -2281,10 +2284,13 @@ emmeans::lsmeans(model, pairwise~Burn_Severity*Land_Coverage_Category, at=list(L
 
 ```{r Figure 6 ph for manuscript}
 
-figure6 <- ggarrange(pH_BS, aq_pH, ncol = 1)
+figure6 <- ggarrange(pH_BS, aq_pH, ncol = 1, align = "v")
+
 figure6
 
-cowplot::save_plot("./figures/pH_all_revisions.pdf", figure6, ncol = 1, base_height = 8, base_width = 7, dpi=600)
+#note that this is saving the plots at slightly different sizes. manually saved in export function in Rstudio to maintain sizes set in ggarrange()
+
+#cowplot::save_plot("./figures/pH_all_revisions.pdf", figure6, ncol = 1, base_height = 8, base_width = 7, dpi=600)
 
 ```
 
