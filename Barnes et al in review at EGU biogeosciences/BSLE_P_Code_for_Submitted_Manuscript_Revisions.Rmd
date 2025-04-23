@@ -509,6 +509,7 @@ data<-data %>%
 
 ```
 
+if you would like to save these data for ease of use later on, remove the comments from this chunk and run:
 ```{r save csv}
 #save csv of final collated data with manipulations
 #write.csv(data, "../data/data.csv", row.names = FALSE) #all data
@@ -529,6 +530,7 @@ split_labels_with_parentheses <- function(x) {
 ```
 
 ##Quick data import
+if you'd like to use the files saved above, run this chunk:
 ```{r quick import}
 #import data quickly by removing #s and running; so you don't have to run above code
 
@@ -815,7 +817,8 @@ data_solids_Pconc <- data_solids %>%
 
 solid.P.BS.fig<-ggplot(data_solids_Pconc, aes(x=Burn_Severity, y=Solid_P_mg_kg/1000, fill=Land_Coverage_Category))+geom_boxplot(show.legend=FALSE)+theme_classic()+ylab(expression(paste(Solid~Total~P~(g~P~kg^-1), sep="")))+ xlab("Burn Severity")+ scale_fill_manual(values=c("lightgray","lightgray"))+facet_grid(.~Land_Coverage_Category, scales = "free") + theme(text = element_text(size = 18),panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) + geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
 
-cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, base_width = 8,    base_height = 4, dpi = 300)
+solid.P.BS.fig
+#cowplot::save_plot("../figures/solid.P.BS.fig.pdf", solid.P.BS.fig, base_width = 8,    base_height = 4, dpi = 300)
 ```
 
 ```{r stats}
@@ -855,7 +858,7 @@ NMR_spectra_df_subset<-subset(NMR_spectra_df_subset, value!="")
 
 NMR_stacked_spectra_df <- ggplot(NMR_spectra_df_subset, aes(x=Chemical_Shift_parts_per_million, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + ylim(0,300) + scale_x_reverse() +xlim(10,-10) +scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Chemical Shift (ppm)")
 
-pdf(file = "../figures/NMR_stacked_spectra_df.pdf", width = 3.5, height = 7) 
+#pdf(file = "../figures/NMR_stacked_spectra_df.pdf", width = 3.5, height = 7) 
 print(NMR_stacked_spectra_df)
 dev.off()
 
@@ -875,7 +878,7 @@ NMR_spectra_sb_subset<-subset(NMR_spectra_sb_subset, value!="")
 
 NMR_stacked_spectra_sb <- ggplot(NMR_spectra_sb_subset, aes(x=Chemical_Shift_parts_per_million, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + ylim(0,300) + scale_x_reverse() +xlim(10,-10) +scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Chemical Shift (ppm)")
 
-pdf(file = "../figures/NMR_stacked_spectra_sb.pdf", width = 3.5, height = 7) 
+#pdf(file = "../figures/NMR_stacked_spectra_sb.pdf", width = 3.5, height = 7) 
 print(NMR_stacked_spectra_sb)
 dev.off()
 
@@ -927,7 +930,7 @@ nmr.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable, pattern = var
     legend.text = element_text(size = 20)
   ) +
   labs(fill = "")
-pdf(file = "../figures/nmr.legend.pdf", width = 7, height = 3.5) 
+#pdf(file = "../figures/nmr.legend.pdf", width = 7, height = 3.5) 
 print(nmr.legend)
 dev.off()
 
@@ -951,7 +954,7 @@ DF.raw.nmr<-ggplot(DF.raw, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.raw.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.raw.nmr.pdf", width = 1, height = 1) 
 print(DF.raw.nmr)
 dev.off()
 
@@ -976,7 +979,7 @@ DF.low.nmr<-ggplot(DF.low, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.low.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.low.nmr.pdf", width = 1, height = 1) 
 print(DF.low.nmr)
 dev.off()
 
@@ -1001,7 +1004,7 @@ DF.mod.nmr<-ggplot(DF.mod, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.mod.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.mod.nmr.pdf", width = 1, height = 1) 
 print(DF.mod.nmr)
 dev.off()
 
@@ -1026,7 +1029,7 @@ DF.high.nmr<-ggplot(DF.high, aes(x = "", y = value, fill = variable, pattern = v
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.high.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.high.nmr.pdf", width = 1, height = 1) 
 print(DF.high.nmr)
 dev.off()
 
@@ -1051,7 +1054,7 @@ SB.raw.nmr<-ggplot(SB.raw, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.raw.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.raw.nmr.pdf", width = 1, height = 1) 
 print(SB.raw.nmr)
 dev.off()
 
@@ -1076,7 +1079,7 @@ SB.low.nmr<-ggplot(SB.low, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.low.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.low.nmr.pdf", width = 1, height = 1) 
 print(SB.low.nmr)
 dev.off()
 
@@ -1101,7 +1104,7 @@ SB.mod.nmr<-ggplot(SB.mod, aes(x = "", y = value, fill = variable, pattern = var
     )) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.mod.nmr.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.mod.nmr.pdf", width = 1, height = 1) 
 print(SB.mod.nmr)
 dev.off()
 
@@ -1144,7 +1147,7 @@ mono_die_loss<- ggplot(per_change, aes(x = Burn_Severity, y = value, fill = vari
   labs(fill = NULL) +
   scale_x_discrete(labels = split_labels_with_parentheses)
 
-pdf(file = "../figures/mono_die_loss.pdf", width = 6, height = 3) 
+#pdf(file = "../figures/mono_die_loss.pdf", width = 6, height = 3) 
 print(mono_die_loss)
 dev.off()
 ```
@@ -1191,7 +1194,7 @@ XANES_spectra_df_subset<-subset(XANES_spectra_df_subset, value!="")
 
 XANES_stacked_spectra_df <- ggplot(XANES_spectra_df_subset, aes(x=eV, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + scale_color_manual(values=c('Black','Black', 'Black', 'Black')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Energy (eV)") + xlim(2140, 2200) + ylab ("Normalized Absorption (arb. units)")
 
-pdf(file = "../figures/XANES_stacked_spectra_df.pdf", width = 3, height = 7) 
+#pdf(file = "../figures/XANES_stacked_spectra_df.pdf", width = 3, height = 7) 
 print(XANES_stacked_spectra_df)
 dev.off()
 
@@ -1213,7 +1216,7 @@ XANES_spectra_sb_subset<-subset(XANES_spectra_sb_subset, value!="")
 
 XANES_stacked_spectra_sb <- ggplot(XANES_spectra_sb_subset, aes(x=eV, y = value, color = as.factor(variable))) + geom_path()+theme_classic() + scale_color_manual(values=c('Black','Black', 'Black', 'White')) + theme(axis.ticks.y = element_blank(),  axis.text.y = element_blank(), legend.position = "none")  + ylab("") + xlab("Energy (eV)") + xlim(2140, 2200) + ylab ("Normalized Absorption (arb. units)")
 
-pdf(file = "../figures/XANES_stacked_spectra_sb.pdf", width = 3, height = 7) 
+#pdf(file = "../figures/XANES_stacked_spectra_sb.pdf", width = 3, height = 7) 
 print(XANES_stacked_spectra_sb)
 dev.off()
 
@@ -1274,7 +1277,7 @@ xanes.legend<-ggplot(DF.raw, aes(x = "", y = value, fill = variable, pattern = v
         legend.text = element_text(size = 20)
     ) +
     labs(fill = "")
-pdf(file = "../figures/xanes.legend.pdf", width = 7, height = 3.5) 
+#pdf(file = "../figures/xanes.legend.pdf", width = 7, height = 3.5) 
 print(xanes.legend)
 dev.off()
 
@@ -1314,7 +1317,7 @@ DF.raw.xanes<-ggplot(DF.raw, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.raw.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.raw.xanes.pdf", width = 1, height = 1) 
 print(DF.raw.xanes)
 dev.off()
 
@@ -1355,7 +1358,7 @@ DF.low.xanes<-ggplot(DF.low, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.low.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.low.xanes.pdf", width = 1, height = 1) 
 print(DF.low.xanes)
 dev.off()
 
@@ -1396,7 +1399,7 @@ DF.mod.xanes<-ggplot(DF.mod, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.mod.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.mod.xanes.pdf", width = 1, height = 1) 
 print(DF.mod.xanes)
 dev.off()
 
@@ -1437,7 +1440,7 @@ DF.high.xanes<-ggplot(DF.high, aes(x = "", y = value, fill = variable, pattern =
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/DF.high.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/DF.high.xanes.pdf", width = 1, height = 1) 
 print(DF.high.xanes)
 dev.off()
 
@@ -1478,7 +1481,7 @@ SB.raw.xanes<-ggplot(SB.raw, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.raw.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.raw.xanes.pdf", width = 1, height = 1) 
 print(SB.raw.xanes)
 dev.off()
 
@@ -1519,7 +1522,7 @@ SB.low.xanes<-ggplot(SB.low, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.low.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.low.xanes.pdf", width = 1, height = 1) 
 print(SB.low.xanes)
 dev.off()
 
@@ -1560,7 +1563,7 @@ SB.mod.xanes<-ggplot(SB.mod, aes(x = "", y = value, fill = variable, pattern = v
     ) +
     theme_void() +
     theme(legend.position = "none")
-pdf(file = "../figures/SB.mod.xanes.pdf", width = 1, height = 1) 
+#pdf(file = "../figures/SB.mod.xanes.pdf", width = 1, height = 1) 
 print(SB.mod.xanes)
 dev.off()
 ```
@@ -1616,7 +1619,7 @@ XANES_stacked_spectra_rc <- ggplot(XANES_spectra_rc_subset, aes(x = eV, y = valu
   geom_text(aes(x = 2180, y = 11, label = "Fe-Pi"), size = 5) +
   geom_text(aes(x = 2180, y = 4, label = "Po"), size = 5)
 
-pdf(file = "../figures/XANES_stacked_spectra_rc.pdf", width = 2.25, height = 9) 
+#pdf(file = "../figures/XANES_stacked_spectra_rc.pdf", width = 2.25, height = 9) 
 print(XANES_stacked_spectra_rc)
 dev.off()
 
@@ -1657,7 +1660,7 @@ LCF13<-ggplot(BSLE_0013_solid_LCF_combined, aes(x = eV, y = value, color = compo
     theme(axis.text.y = element_blank())  +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF13.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF13.pdf", width = 3, height = 3) 
 print(LCF13)
 dev.off()
 
@@ -1695,7 +1698,7 @@ LCF7<-ggplot(BSLE_0007_solid_LCF_combined, aes(x = eV, y = value, color = compon
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF7.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF7.pdf", width = 3, height = 3) 
 print(LCF7)
 dev.off()
 
@@ -1734,7 +1737,7 @@ LCF2<-ggplot(BSLE_0002_solid_LCF_combined, aes(x = eV, y = value, color = compon
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF2.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF2.pdf", width = 3, height = 3) 
 print(LCF2)
 dev.off()
 
@@ -1773,7 +1776,7 @@ LCF50<-ggplot(BSLE_0050_solid_LCF_combined, aes(x = eV, y = value, color = compo
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.90), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF50.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF50.pdf", width = 3, height = 3) 
 print(LCF50)
 dev.off()
 
@@ -1812,7 +1815,7 @@ LCF14<-ggplot(BSLE_0014_solid_LCF_combined, aes(x = eV, y = value, color = compo
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF14.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF14.pdf", width = 3, height = 3) 
 print(LCF14)
 dev.off()
 
@@ -1851,7 +1854,7 @@ LCF11<-ggplot(BSLE_0011_solid_LCF_combined, aes(x = eV, y = value, color = compo
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF11.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF11.pdf", width = 3, height = 3) 
 print(LCF11)
 dev.off()
 
@@ -1890,7 +1893,7 @@ LCF72<-ggplot(BSLE_0072_solid_LCF_combined, aes(x = eV, y = value, color = compo
     theme(axis.text.y = element_blank()) +
   theme(legend.position = c(0.85, 0.85), legend.justification = c(1, 1))
 
-pdf(file = "../figures/LCF72.pdf", width = 3, height = 3) 
+#pdf(file = "../figures/LCF72.pdf", width = 3, height = 3) 
 print(LCF72)
 dev.off()
 
@@ -2033,7 +2036,8 @@ leach.Pnorm.conc<-ggplot(leach.fig.stack, aes(x = Burn_Severity, y = value, fill
     panel.border = element_rect(color = "black", fill = NA, linewidth = 1)
   ) + geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")
 
-cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_height = 6, base_aspect_ratio= 1:1, dpi=100)
+leach.Pnorm.conc
+#cowplot::save_plot("../figures/leach.Pnorm.conc.pdf", leach.Pnorm.conc, ncol = 1, nrow = 1, base_height = 6, base_aspect_ratio= 1:1, dpi=100)
 
 
 
@@ -2061,7 +2065,8 @@ leach.Pnorm.conc.mbd<-ggplot(leach.fig.mbd, aes(x = Burn_Severity, y = value, fi
     geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain")+
   facet_grid(variable ~ Land_Coverage_Category, scales = "free_x")
 
-cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 6, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
+leach.Pnorm.conc.mbd
+#cowplot::save_plot("../figures/leach.Pnorm.conc.mbd.pdf", leach.Pnorm.conc.mbd, ncol = 1, nrow = 1, base_height = 6, base_width = 5.5, base_aspect_ratio= 1:1, dpi=100)
 ```
 
 ```{r total P and MBD stats}
@@ -2179,7 +2184,9 @@ aq_pH <-ggplot(data, aes(x=pH, y=Leachate_mg_P_per_g_P_in_solid_filt0.7, color=B
   scale_color_manual(name = "Burn Severity", values=c("#0a9396", "#ffba08", "#e85d04", "#9d0208")) +
   geom_text(data = facet_text, aes(x = x, y = y, label = label), size = 4.5, hjust = 1, vjust = 1, color = "black", parse = TRUE)
 
-cowplot::save_plot("./figures/aq_pH_revisions.pdf", aq_pH, ncol = 1, nrow = 1,  base_height = 3.85, base_width = 8.9, base_aspect_ratio= 2:1, dpi=100)
+aq_pH
+
+#cowplot::save_plot("./figures/aq_pH_revisions.pdf", aq_pH, ncol = 1, nrow = 1,  base_height = 3.85, base_width = 8.9, base_aspect_ratio= 2:1, dpi=100)
 ```
 
 ```{r aqueous P stats}
@@ -2256,7 +2263,9 @@ pH_BS<-ggplot(data_pH, aes(x=Burn_Severity, y=pH, fill = Land_Coverage_Category)
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) + 
   geom_text(aes(label = Annotation, x = x, y = y), size = 4.5, fontface = "plain") 
 
-cowplot::save_plot("./figures/pH_BS_revisions.pdf", pH_BS, ncol = 1, nrow = 1, base_height = 5, base_width = 10, dpi=100)
+pH_BS
+
+#cowplot::save_plot("./figures/pH_BS_revisions.pdf", pH_BS, ncol = 1, nrow = 1, base_height = 5, base_width = 10, dpi=100)
 ```
 
 ```{r pH and burn severity stats}
