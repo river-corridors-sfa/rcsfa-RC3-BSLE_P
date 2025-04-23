@@ -12,7 +12,7 @@ Guide for generating stats and figures associated with the data package Barnes M
 
 Steps:
 
-1.  The manuscript data package will contain the following folders:
+1.  The manuscript data package data folder will contain the following folders:
 
 -   P-NMR
 
