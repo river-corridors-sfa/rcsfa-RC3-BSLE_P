@@ -53,6 +53,7 @@ rsconnect/
 
 # files not needed in review 
 do not commit/
+archive/
 
 # Adding folders to ignore - commented these out so they remain in GitHub for now, but these are the files to exclude during publishing
  data/Archive/
