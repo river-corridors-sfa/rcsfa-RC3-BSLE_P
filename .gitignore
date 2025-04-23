@@ -1,3 +1,6 @@
+# Ignore already published data
+/Barnes_2024_BSLE_P_Gradient_data/BSLE_Data_Package_v3/
+
 # History files
 .Rhistory
 .Rapp.history
