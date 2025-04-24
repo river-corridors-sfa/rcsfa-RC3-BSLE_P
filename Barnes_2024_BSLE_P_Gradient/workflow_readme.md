@@ -7,6 +7,6 @@ Guide for generating stats and figures associated with the following data packag
 
 Steps:
 
-1. Before getting started, one must download files from an associated data package (Grieger et al., 2022; doi: 10.15485/1894135). Refer to `Barnes_2024_BSLE_P_Gradient/data/BSLE_Data_Package_v3/published_data_readme.md` for details on how to download and set up that data. 
+1. Before getting started, one must download files from an associated data package (Grieger et al., 2022; doi: 10.15485/1894135). Refer to "Barnes_2024_BSLE_P_Gradient/data/BSLE_Data_Package_v3/[published_data_readme.md](https://github.com/river-corridors-sfa/rcsfa-RC3-BSLE_P/blob/main/Barnes_2024_BSLE_P_Gradient/data/BSLE_Data_Package_v3/published_data_readme.md)" for details on how to download and set up that data. 
 2. Open R and set your working directory to "Barnes_2024_BSLE_P_Gradient".
 3. Open `BSLE_P_Code_for_Submitted_Manuscript_Revisions.Rmd` and run the code. *Note that all instances of saving the data frame and figures have been commented out.* If you would like to save these, please remove the #s from those lines of code.
