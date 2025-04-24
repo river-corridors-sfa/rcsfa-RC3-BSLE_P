@@ -1,7 +1,7 @@
 # how to download public data
 
 To be able to run the scripts in this repo, one must download files from this associated data package: 
-> Grieger S ; Aronstein P ; Bailey J ; Barnes M ; Barton R ; Bladon K D ; Chu R ; Forbes B ; Garayburu-Caruso V A ; Graham E B ; Goldman A E ; Homolka K ; Kew W ; Lipton A S ; McKever S A ; Munson K M ; Myers C R ; Nieto-Pereira N ; O'Day P ; Otenburg O ; Regier T ; Renteria L ; Roebuck A ; Scheibe T D ; Torgeson J M ; Toyoda J G ; Wagner S ; Winston I ; Young R P ; Myers-Pigg A (2022): Organic matter concentration and composition of experimentally burned open air and muffle furnace vegetation chars across differing burn severity and feedstock types from Pacific Northwest, USA (v4). River Corridor and Watershed Biogeochemistry SFA, ESS-DIVE repository. Dataset. doi:10.15485/1894135 accessed via https://data.ess-dive.lbl.gov/datasets/doi:10.15485/1894135 on 2025-04-23
+> Grieger S ; Aronstein P ; Bailey J ; Barnes M ; Barton R ; Bladon K D ; Chu R ; Forbes B ; Garayburu-Caruso V A ; Graham E B ; Goldman A E ; Homolka K ; Kew W ; Lipton A S ; McKever S A ; Munson K M ; Myers C R ; Nieto-Pereira N ; O'Day P ; Otenburg O ; Regier T ; Renteria L ; Roebuck A ; Scheibe T D ; Torgeson J M ; Toyoda J G ; Wagner S ; Winston I ; Young R P ; Myers-Pigg A (2022): Organic matter concentration and composition of experimentally burned open air and muffle furnace vegetation chars across differing burn severity and feedstock types from Pacific Northwest, USA (v3). River Corridor and Watershed Biogeochemistry SFA, ESS-DIVE repository. Dataset. doi:10.15485/1894135 accessed via https://data.ess-dive.lbl.gov/datasets/doi:10.15485/1894135
 
 Download these files: 
 -   v1_BSLE_Metadata_and_Protocols.zip
