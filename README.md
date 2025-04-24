@@ -1,27 +1,21 @@
 # rcsfa-RC3-BSLE_P
 
-Guide for generating stats and figures associated with the data package Barnes M E ; Aronstein P J ; Bailey J D ; Bladon K D ; Forbes B ; Garayburu-Caruso V A ; Grieger S ; Graham E B ; McKever S A ; Myers C R ; Munson K M ; O'Day P A ; Powers-McCormack B ; Renteria L ; Roebuck A ; Scheibe T D ; Young R P ; Myers-Pigg A N (2024): Data and scripts associated with: “Burn severity and vegetation type control phosphorus concentration, molecular composition, and mobilization”. River Corridor and Watershed Biogeochemistry SFA, ESS-DIVE repository. Dataset. <doi:10.15485/2547035> accessed via <https://data.ess-dive.lbl.gov/datasets/doi:10.15485/2547035>
+#### Data and scripts associated with: “Burn severity and vegetation type control phosphorus concentration, molecular composition, and mobilization”
+Morgan E. Barnes, Paul J. Aronstein, John D. Bailey, Kevin D. Bladon, Brieanne Forbes, Vanessa A. Garayburu-Caruso, Samantha Grieger, Emily B. Graham, Sophia A. McKever, Chris R. Myers, Kathleen M. Munson, Peggy A. O'Day, Beck Powers-McCormack, Lupita Renteria, Alan Roebuck, Timothy D. Scheibe, Robert P. Young, and Allison N. Myers-Pigg  
 
-### This guide provides step-by-step instructuions to reproduce figures and stats for the manuscript associated with this data package.
+## Summary
+This data package is associated with the publication “Burn severity and vegetation type control phosphorus concentration, molecular composition, and mobilization” submitted to Environmental Science & Technology (Barnes et al. 2024).
 
-*Before getting started, one must download files from an associated data package (Grieger et al., 2022; doi: 10.15485/1894135:*
+This study investigates how phosphorus (P) biogeochemistry is altered by burn severity in contrasting types of vegetation chars. This data package documents the workflow used to process and generate the main figures and statistics in the manuscript. The R scripts reference minimally processed P nuclear magnetic resonance (P-NMR) and X-ray absorption near edge structure (P-XANES) data, as well as fully processed data including total elemental composition of the solid chars, total elemental composition of the char leachates (particulate and aqueous phases), and leachate aqueous phase molybdate reactive P concentration. These source data and associated metadata can be found in another data package, available on ESS-DIVE at https://data.ess-dive.lbl.gov/datasets/doi:10.15485/1894135 (Grieger et al. 2022; v3). Scripts included in this data package finish the processing workflow for NMR and XANES data. These data can be used to gain a better understanding of bulk chemical changes in chars and their leachates, as well as detailed molecular changes to P.
 
--   v1_BSLE_Metadata_and_Protocols.zip
+This data package is associated with the GitHub repository found at https://github.com/river-corridors-sfa/rcsfa-RC3-BSLE_P.
 
--   v3_BSLE_Data.zip (Version number may change with subsequent releases)
+This data package is comprised of 3 folders: (1) data, (2) scripts, and (3) figures. Details on how to recreate the workflow can be found in the Critical Details section of the readme. The file-level metadata file (file ending in “flmd.csv”) lists all files contained in this data package and descriptions for each. The data dictionary (file ending in “dd.csv”) describes all tabular data columns and their respective definitions and units.
 
-Steps:
+## Data Reference
+In addition to this repo, the Data Package is published and publicly available on ESS-DIVE. If using these data, please cite the Data Package with the following citation and DOI:  
+> Barnes M E ; Aronstein P J ; Bailey J D ; Bladon K D ; Forbes B ; Garayburu-Caruso V A ; Grieger S ; Graham E B ; McKever S A ; Myers C R ; Munson K M ; O'Day P A ; Powers-McCormack B ; Renteria L ; Roebuck A ; Scheibe T D ; Young R P ; Myers-Pigg A N (2024): Data and scripts associated with: “Burn severity and vegetation type control phosphorus concentration, molecular composition, and mobilization”. River Corridor and Watershed Biogeochemistry SFA, ESS-DIVE repository. Dataset. doi:10.15485/2547035 accessed via https://data.ess-dive.lbl.gov/datasets/doi:10.15485/2547035
 
-1.  The manuscript data package will contain the following folders:
-
--   P-NMR
-
--   P-XANES
-
-2.  Locate the folder from the data package called "data" in your working directory.
-
-3.  Within the ‘data’ folder, create a new folder called "BSLE_Data_Package_v3". Insert unzipped versions of the two folders downloaded above. Maintain the original folders and folder names.
-
-4.  Run processing code from the data package. *Note that all instances of saving the data frame and figures have been commented out.* If you would like to save these, please remove the #s from those lines of code.
-
--   For file paths, note the need to use ‘/’ for Windows or ‘’ for Mac users
+## Contact
+Morgan Barnes, morgan.barnes@pnnl.gov
+Allison Myers-Pigg, allison.myers-pigg@pnnl.gov
