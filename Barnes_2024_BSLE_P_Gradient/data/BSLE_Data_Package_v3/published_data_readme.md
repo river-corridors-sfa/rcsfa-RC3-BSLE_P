@@ -7,7 +7,7 @@ Download these files:
 -   v1_BSLE_Metadata_and_Protocols.zip
 -   v3_BSLE_Data.zip (Version number may change with subsequent releases)
 
-Within the ‘data’ folder, create a new folder called "BSLE_Data_Package_v3". Insert unzipped versions of the two folders downloaded above. Maintain the original folders and folder names.
+Within the `data` folder, if it doesn't already exist, create a new folder called "BSLE_Data_Package_v3". Insert unzipped versions of the two folders downloaded above. Maintain the original folders and folder names.
 
 Once downloaded this is what your newly downloaded files should look like: 
 
