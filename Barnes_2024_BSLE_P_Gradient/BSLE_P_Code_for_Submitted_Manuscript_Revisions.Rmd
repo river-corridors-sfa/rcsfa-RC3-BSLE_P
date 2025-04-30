@@ -50,7 +50,7 @@ This includes:
   d) XANES of solid chars
   e) NMR of solid char extracts
 
-2) Chemistry data that needs post-data package processing after download from BSLE Data Package v3; this was done and provided within the BSLE P Manuscript Data Package (Barnes et al, in prep):
+2) Chemistry data that needs post-data package processing after download from BSLE Data Package v3; this was done and provided within the BSLE P Manuscript Data Package (Barnes et al, 2024):
   a) XANES of solid chars (spectra of samples and reference compounds; linear combination fits)
   b) NMR of solid char extracts (spectra of samples, spiking experiment spectra, and deconvolution findings)
 
@@ -59,7 +59,7 @@ Downloading the BSLE Data Package is done manually and stored on your local comp
 `data/`
 
 BSLE v3 data package URL: https://data.ess-dive.lbl.gov/view/doi:10.15485/1894135
-BSLE P manuscript data package URL: in prep as of 7/23/2024
+BSLE P manuscript data package URL: https://data.ess-dive.lbl.gov/datasets/doi:10.15485/2547035
 
 Bring in the data package data:
 ```{r import data packages}
@@ -2587,96 +2587,6 @@ ggplot(data, aes(x = Burn_Severity, y = TN_mg_N_per_L, fill = Land_Coverage_Cate
     scale_x_discrete(labels = split_labels_with_parentheses) +facet_grid(.~Land_Coverage_Category, scales = "free")
 ```
 
-
-##PCA
-```{r}
-data_wide <- stoich_mean %>%
-    select(-value_sd) %>%  # Remove the value_sd column
-    group_by(Burn_Severity, Land_Coverage_Category, filter, variable) %>%
-    pivot_wider(
-        names_from = variable,
-        values_from = value_mean
-    )
-
-library(factoextra)
-
-data <- data_wide %>%
-  select(Burn_Severity, Land_Coverage_Category, filter, contains(":P")) %>%
-  select(-'C:P', -'N:P', -'Na:P', -'Al:P') %>%
-  mutate_if(is.character, as.factor)  # Convert character columns to factors
-
-# Check for NAs and remove rows with NAs in numeric columns for PCA
-pca_data_clean <- na.omit(data %>% select(where(is.numeric)))
-
-# Perform PCA
-pca_result <- prcomp(pca_data_clean[4:8], scale. = TRUE)  # No need to exclude columns, as only numeric columns are selected
-
-# Create a data frame with PCA results
-pca_results_df <- as.data.frame(pca_result$x)
-pca_results_df <- cbind(pca_data_clean[, c("Burn_Severity", "Land_Coverage_Category", "filter")], pca_results_df)
-
-# Plot PCA
-pca_plot <- ggplot(pca_results_df, aes(x = PC1, y = PC2, color = Burn_Severity, shape = filter)) +
-  geom_point(alpha = 0.7) +
-  theme_minimal() +
-  labs(title = "PCA of Nutrient Data",
-       x = "Principal Component 1",
-       y = "Principal Component 2") +
-  scale_color_discrete(name = "Burn Severity") +
-  scale_shape_discrete(name = "Sample Type") +
-  theme(legend.position = "right")
-
-
-
-#old code
-data_solids_corr <- data_solids %>%
-  rename_with(
-    ~sub("Solid_(.*?)_mg_kg", "\\1", .),
-    starts_with("Solid_")) %>%
-  select(Burn_Severity, Land_Coverage_Category, P, C, N, Ca, Mg, Na, Fe, Al, S, K) %>%
-  na.omit(data_solids)
-
-pca <- prcomp(data_solids_corr[3:12], center=TRUE, scale=TRUE)
-
-##Extract PCA information, including loadings, sample scores, and component percentages
-eigval <- pca$sdev^2
-eigvec <- data.frame(pca$rotation)
-loadings1 <- eigvec$PC1*sqrt(eigval[1])
-loadings2 <- eigvec$PC2*sqrt(eigval[2])
-loadings <- cbind(loadings1, loadings2)
-
-colnames(loadings)<-c('PC1','PC2')
-rownames(loadings)<-colnames(data_solids_corr[3:12])
-loadingstest<-as.data.frame(loadings)
-pca_out <- as.data.frame(pca$x)
-percentage <- round(pca$sdev^2/sum(pca$sdev^2)*100,1)
-percentage <- paste(colnames(pca_out), "-", paste(as.character(percentage), "%", sep=""))
-
-
-xscale <- 10
-yscale <- 10
-ggplot()+geom_point(data=pca_out,mapping=aes(x=PC1, y=PC2, colour=data_solids_corr$Land_Coverage_Category,shape=data_solids_corr$Burn_Severity),size=3)+xlim(-xscale,xscale)+ylim(-yscale,yscale)+geom_abline(intercept=0, slope=0, linetype="dashed", size=0.8, colour="gray")+geom_vline(aes(xintercept=0), linetype="dashed", size=0.8, colour="gray")+theme_light()+labs(colour="Land_Coverage_Category",shape="Burn_Severity")+theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),axis.title.x=element_text(size=16),axis.title.y=element_text(size=16),axis.text.y=element_text(size=16),axis.text.x=element_text(size=16),legend.title=element_text(size=12),legend.text=element_text(size=12),legend.position="bottom",legend.box="verticle",legend.margin=margin())+xlab(percentage[1])+ylab(percentage[2])+guides(color=guide_legend(nrow=2, byrow=TRUE))+scale_color_manual(values=c("#346648", "#dbb40d"))+scale_shape_manual(values=c(16,17,3,12))+geom_text_repel(data=loadingstest,mapping=aes(label=row.names(loadingstest), x=PC1*xscale, y=PC2*yscale),size=5, colour="black", alpha=0.5)
-
-
-
-
-
-
-# Create the scatter plot
-ggplot(stoich_mean, aes(x = 1, y = value_mean, color = Burn_Severity, shape = Land_Coverage_Category)) +
-  geom_point(size = 3) +  # Adjust point size as needed
-  labs(title = "Visualization of value_mean with Burn Severity and Land Coverage",
-       x = "Sample",
-       y = "value_mean") +
-  theme_minimal() +
-  
-  # Add circles around the 3 filter categories
-  stat_ellipse(aes(group = filter), type = "norm", linetype = "dashed") +
-  
-  # Customize the colors, shapes, and theme if needed
-  scale_color_manual(values = c("red", "blue", "green", "black"))  # Adjust colors for Burn_Severity categories if desired
-
-```
 
 
 
