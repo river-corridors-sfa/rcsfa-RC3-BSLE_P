@@ -1,0 +1,89 @@
+File_Name,File_Description,Standard,Missing_Value_Codes,File_Path
+readme_Barnes_2024_BSLE_P_Gradient.pdf,Data package level readme. Contains data package summary; acknowledgements; and contact information.,N/A,N/A,/Barnes_2024_BSLE_P_Gradient
+Barnes_2024_BSLE_P_Gradient_flmd.csv,File-level metadata that lists and describes all of the files contained in the data package.,ESS-DIVE FLMD v1; ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient
+Barnes_2024_BSLE_P_Gradient_dd.csv,"Data dictionary that defines column and row headers across all tabular data files (files ending in "".csv"" or "".tsv"") in the data package.",ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient
+BSLE_P_Code_for_Submitted_Manuscript_Revisions.Rmd,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient
+workflow_readme.md,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient
+published_data_readme.md,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/BSLE_Data_Package_v3
+NMR_Deconvolutions.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-NMR
+NMR_Species_Percent.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-NMR
+NMR_Spike_ppm.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-NMR
+File_BS_Norm_Parameters.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES
+Pi_Al_GibbSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Al_Precip_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Al_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Apatite_CaDefHydroxy_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Apatite_Carbonate_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Apatite_Fluor_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Apatite_Hydroxy_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Dibasic_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Mono_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Octa_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Precip_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Pyro_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Ca_Tri_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Fe_FerriSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Fe_GoethSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Fe_Precip_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Fe_Pyro_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Fe_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_K_Di_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_K_Pyro_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Mg_Di_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Mg_Pyro_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Mg_Tri_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_NH4_Di_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_NH4_Mg_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_NH4_Mono_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Na_Di_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Na_Mono_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Na_Pyro_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Pi_Na_Tri_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Al_DNA_GibbSorb_2_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Al_DNA_GibbSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Al_PA_GibbSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Al_PA_Precip_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Ca_Lecithin_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Ca_PA_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_DNA_FerriSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_DNA_GoethSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_PA_FerriSorb_2_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_PA_FerriSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_PA_GoethSorb_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Fe_PA_Precip_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Na_AMP_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Na_ATP_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Na_DNA_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+Po_Na_PA_std.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+xanes_example_referencecompounds.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds
+BSLE_0001-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0002-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0007-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0008-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0009-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0010-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0011-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0012-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0013-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0014-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0017-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0050-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0051-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0052-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0058-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0067-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0068-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0071-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0072-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0073-solid_P-XANES.xmu.nor,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+P-XANES_LCF.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+xanes_example_lcf.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+xanes_example_referencecompounds.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+xanes_example_spectra.csv,,ESS-DIVE CSV v1,"""N/A""; ""-9999""; """"; ""NA""",/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples
+BSLE_0002-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0007-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0011-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0013-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0014-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0050-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
+BSLE_0072-solid_P-XANES.xmu.lcf,,N/A,N/A,/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/LCF
