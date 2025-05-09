@@ -18,7 +18,7 @@ output: html_document
 
 #You will need to have a folder titled "plot" in the main folder that will be used for output
 
-#You will need to have a folder titled "Athena_Code_Output" and a "plot" folder within it to be used for outputs
+#You will need to have a folder titled "Athena_Code_Output" and a "plots" folder within it to be used for outputs
 
 #For samples with -0.7filt, the period between 0 and 7 was removed in the imported files and File_BS_Norm_Parameters file 
 
@@ -58,7 +58,7 @@ samples = list.files(pattern = "BSLE")
 stds = list.files(pattern = "std")
 
 #Read in different background correction and normalization values for standards and samples
-val = read.csv("File_BS_Norm_Parameters.csv")
+val = read.csv("/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/File_BS_Norm_Parameters.csv")
 std.val = val[grep("std",val$File_Name),]
 samples.val = val[grep("BSLE",val$File_Name),]
 
