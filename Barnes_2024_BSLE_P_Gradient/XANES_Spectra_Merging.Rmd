@@ -31,10 +31,9 @@ getwd()
 ##Samples
 ```{r}
 #Load samples spectra and merge to make it easier to make a figure
-
 file_names  <- c("BSLE_0013-solid_P-XANES.xmu.nor", "BSLE_0007-solid_P-XANES.xmu.nor", "BSLE_0002-solid_P-XANES.xmu.nor", "BSLE_0050-solid_P-XANES.xmu.nor", "BSLE_0014-solid_P-XANES.xmu.nor", "BSLE_0011-solid_P-XANES.xmu.nor", "BSLE_0072-solid_P-XANES.xmu.nor")
 
-file_paths <- file.path("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Samples", file_names)
+file_paths <- file.path("/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples", file_names)
 
 
 merged_data <- file_paths %>%
@@ -53,7 +52,7 @@ merged_data <- map(file_paths, ~{
 
 final_df_samples <- reduce(merged_data, full_join, by = "eV")
 
-write.csv(final_df_samples, "../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Samples/xanes_example_spectra.csv")
+#write.csv(final_df_samples, "/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/xanes_example_spectra.csv")
 ```
 
 ##Standards
@@ -62,7 +61,7 @@ write.csv(final_df_samples, "../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data
 
 file_names  <- c("Pi_Al_GibbSorb_std.xmu.nor", "Pi_Apatite_CaDefHydroxy_std.xmu.nor", "Pi_Fe_GoethSorb_std.xmu.nor", "Pi_K_Pyro_std.xmu.nor", "Pi_Mg_Tri_std.xmu.nor", "Pi_Na_Tri_std.xmu.nor", "Pi_NH4_Mg_std.xmu.nor", "Po_Ca_Lecithin_std.xmu.nor")
 
-file_paths <- file.path("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Reference_Compounds", file_names)
+file_paths <- file.path("/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds", file_names)
 
 
 merged_data <- file_paths %>%
@@ -81,7 +80,7 @@ merged_data <- map(file_paths, ~{
 final_df_standards <- reduce(merged_data, full_join, by = "eV") %>%
   mutate_all(~coalesce(., -9999))
 
-write.csv(final_df_standards, "../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Reference_Compounds/xanes_example_referencecompounds.csv", row.names=FALSE)
+#write.csv(final_df_standards, "/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds/xanes_example_referencecompounds.csv", row.names=FALSE)
 ```
 
 ##LCF Examples
@@ -94,7 +93,7 @@ write.csv(final_df_standards, "../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Da
 
 file_names  <- c("Pi_Al_GibbSorb_std.xmu.nor", "Pi_Apatite_CaDefHydroxy_std.xmu.nor", "Pi_Apatite_Carbonate_std.xmu.nor", "Pi_Ca_Tri_std.xmu.nor", "Pi_Fe_GoethSorb_std.xmu.nor", "Pi_K_Pyro_std.xmu.nor", "Pi_Mg_Tri_std.xmu.nor", "Pi_Na_Tri_std.xmu.nor", "Pi_NH4_Mg_std.xmu.nor", "Po_Na_AMP_std.xmu.nor")
 
-file_paths <- file.path("../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Reference_Compounds", file_names)
+file_paths <- file.path("/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Reference_Compounds", file_names)
 
 
 merged_data <- file_paths %>%
@@ -116,5 +115,5 @@ final_df_lcf <- final_df_lcf %>%
   full_join(final_df_samples)
 
 
-write.csv(final_df_lcf, "../data/Barnes_2024_BSLE_P_Gradient_Manuscript_Data_Package/P-XANES/P_XANES_Samples/xanes_example_lcf.csv")
+#write.csv(final_df_lcf, "/Users/barn772/Library/CloudStorage/OneDrive-PNNL/Documents/GitHub/rcsfa-RC3-BSLE_P/Barnes_2024_BSLE_P_Gradient/data/Barnes_2024_BSLE_P_Gradient/P-XANES/P-XANES_Samples/xanes_example_lcf.csv")
 ```
